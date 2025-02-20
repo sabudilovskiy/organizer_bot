@@ -146,7 +146,7 @@ void Database::consumeEvents(const std::vector<int64_t>& event_ids) {
   if (event_ids.empty()) {
     return;
   }
-  std::string query = "UPDATE events SET consumed = false WHERE event_id IN (";
+  std::string query = "UPDATE events SET consumed = true WHERE event_id IN (";
   sql::add_n_arg(query, event_ids.size());
   query.append(")");
 

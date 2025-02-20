@@ -44,7 +44,7 @@ consumer_t start_dialog(UserCtx ctx) {
 
   co_yield dd::elements_of(read_text(ctx, user, name, "Type your name: "));
 
-  co_yield dd::elements_of(read_text(ctx, user, name, "Type your date: "));
+  co_yield dd::elements_of(read_text(ctx, user, date, "Type your date: "));
 
   (void)co_await api.sendMessage(tgbm::api::send_message_request{
       .chat_id = user.chat_id, .text = fmt::format("End dialog. name: {}, date: {}", name, date)});

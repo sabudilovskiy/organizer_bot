@@ -11,16 +11,26 @@ void consume_first_event(UserCtx ctx) {
   }
 }
 
-consumer_t read_text(UserCtx ctx, std::string& text) {
-  for (;;) {
+consumer_t read_text(UserCtx ctx, const User& user, std::string& text, std::string message) {
+  auto try_read = [&]() {
     for (auto& e : ctx.events) {
       if (!e.consumed && e.type == EventType::message) {
         text = e.meta["text"].as<std::string>();
         e.consumed = true;
-        co_return;
+        return true;
       }
     }
+    return false;
+  };
+  if (try_read())
+    co_return;
+
+  (void)co_await ctx.api.sendMessage(
+      tgbm::api::send_message_request{.chat_id = user.chat_id, .text = message});
+  for (;;) {
     co_yield {};
+    if (try_read())
+      co_return;
   }
 }
 
@@ -32,17 +42,9 @@ consumer_t start_dialog(UserCtx ctx) {
 
   consume_first_event(ctx);
 
-  // тут надо бы добавить, что отправка еслси соотвествующий ивент не consumed, нужно крч сделать функцию на
-  // сообщение если нет ивента + отправку сообщеиня
-  (void)co_await api.sendMessage(
-      tgbm::api::send_message_request{.chat_id = user.chat_id, .text = "type your name"});
+  co_yield dd::elements_of(read_text(ctx, user, name, "Type your name: "));
 
-  co_yield dd::elements_of(read_text(ctx, name));
-
-  (void)co_await api.sendMessage(
-      tgbm::api::send_message_request{.chat_id = user.chat_id, .text = "type your date"});
-
-  co_yield dd::elements_of(read_text(ctx, date));
+  co_yield dd::elements_of(read_text(ctx, user, name, "Type your date: "));
 
   (void)co_await api.sendMessage(tgbm::api::send_message_request{
       .chat_id = user.chat_id, .text = fmt::format("End dialog. name: {}, date: {}", name, date)});

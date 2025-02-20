@@ -34,10 +34,10 @@ const std::string q_update_user = "UPDATE users SET message_id = ?, state = ?, m
 const std::string q_get_events = "SELECT ts, user_id, meta FROM events";
 
 const std::string q_add_event =
-    "INSERT INTO events (ts, user_id, type, meta, executed) VALUES (?, ?, ?, ?, 0) RETURNING event_id";
+    "INSERT INTO events (ts, user_id, type, meta, consumed) VALUES (?, ?, ?, ?, 0) RETURNING event_id";
 
 const std::string q_select_events =
-    "SELECT event_id, ts, user_id, type, meta, executed FROM events where EXECUTED = 0 ORDER BY ts ASC, "
+    "SELECT event_id, ts, user_id, type, meta, consumed FROM events where consumed = 0 ORDER BY ts ASC, "
     "user_id ASC";
 
 const std::string q_init = R"(
@@ -63,9 +63,9 @@ CREATE TABLE IF NOT EXISTS events (
       user_id INTEGER, 
       type TEXT,
       meta TEXT, 
-      executed INTEGER);
+      consumed INTEGER);
 
-CREATE INDEX IF NOT EXISTS events_idx ON events (user_id, executed, ts);
+CREATE INDEX IF NOT EXISTS events_idx ON events (user_id, consumed, ts);
 CREATE INDEX IF NOT EXISTS tasks_idx ON events (user_id);
 )";
 
@@ -137,4 +137,27 @@ std::int64_t Database::addEvent(ts_t ts, std::int64_t user_id, EventType type, c
 std::vector<Event> Database::getEvents() {
   return sql::execute<std::vector<Event>>(db, q_select_events);
 }
+
+std::int64_t Database::addEvent(const EventRawData& e) {
+  return addEvent(e.ts, e.user_id, e.type, e.meta);
+}
+
+void Database::consumeEvents(const std::vector<int64_t>& event_ids) {
+  if (event_ids.empty()) {
+    return;
+  }
+  std::string query = "UPDATE events SET consumed = false WHERE event_id IN (";
+  sql::add_n_arg(query, event_ids.size());
+  query.append(")");
+
+  SQLite::Statement statement(*db, query);
+
+  std::size_t cur_index = 1;
+  for (auto event_id : event_ids) {
+    sql::binder<int64_t>::bind(statement, event_id, cur_index);
+  }
+  while (statement.executeStep()) {
+  }
+}
+
 }  // namespace bot

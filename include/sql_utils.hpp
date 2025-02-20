@@ -24,4 +24,14 @@ Res execute(std::unique_ptr<SQLite::Database>& db, const std::string& query, con
   return parser<Res>::parse(statement);
 }
 
+// does not add a comma at the beginning and end query
+inline void add_n_arg(std::string& query, std::size_t N) {
+  query.reserve(query.size() + N * 2 + 1);
+  if (N > 0)
+    query.append("?");
+  for (std::size_t i = 1; i < N; i++) {
+    query.append(",?");
+  }
+}
+
 }  // namespace bot::sql

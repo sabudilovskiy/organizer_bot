@@ -16,10 +16,13 @@ using consumer_t = dd::channel<dd::nothing_t>;
 struct EventBroker {
   EventBroker(const tgbm::api::telegram& api, Database& db) noexcept;
 
-  dd::task<void> add(ts_t ts, std::int64_t user_id, EventType type, json_value meta);
+  dd::task<void> process_update(tgbm::api::Update update);
+
+  std::vector<Event>& get_events(std::int64_t user_id);
 
   void load();
-  std::vector<Event>& get_events(std::int64_t user_id);
+
+  void save();
 
  private:
   Database& db;

@@ -25,8 +25,13 @@ struct Database {
   void updateTask(std::int64_t id, std::int64_t user_id, const std::string& title,
                   const std::string& description, bool status);
 
+  void consumeEvents(const std::vector<int64_t>& event_ids);
+
   // returns: event_id
   std::int64_t addEvent(ts_t ts, std::int64_t user_id, EventType type, const json_value& meta);
+
+  // returns: event_id
+  std::int64_t addEvent(const EventRawData& data);
 
   std::vector<Event> getEvents();
 

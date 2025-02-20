@@ -3,30 +3,54 @@
 
 namespace bot {
 
+namespace {
+tgbm::api::optional<EventRawData> generate_event(tgbm::api::Update u, Database& db) {
+  if (auto* msg = u.get_message(); msg->from && msg->from->id && msg->chat->type == "private") {
+    db.fetchUser(RequestUser{.user_id = msg->from->id, .chat_id = msg->chat->id});
+    json_value meta = json_value::object();
+    meta["text"] = msg->text;
+    return EventRawData{
+        .ts = now(),
+        .user_id = msg->from->id,
+        .type = EventType::message,
+        .meta = meta,
+    };
+  }
+
+  return std::nullopt;
+}
+}  // namespace
+
 EventBroker::EventBroker(const tgbm::api::telegram& api, Database& db) noexcept : api(api), db(db) {
 }
 
-dd::task<void> EventBroker::add(ts_t ts, std::int64_t user_id, EventType type, json_value meta) {
-  auto& user_events = events[user_id];
+dd::task<void> EventBroker::process_update(tgbm::api::Update update) {
+  auto _event = generate_event(std::move(update), db);
+  if (!_event) {
+    co_return;
+  }
+  auto event = std::move(*_event);
+
+  auto& user_events = events[event.user_id];
   user_events.emplace_back(Event{
-      .event_id = db.addEvent(ts, user_id, type, meta),
-      .ts = ts,
-      .user_id = user_id,
-      .meta = std::move(meta),
+      .event_id = db.addEvent(event),
+      .ts = event.ts,
+      .user_id = event.user_id,
+      .meta = std::move(event.meta),
   });
-  auto& user_consumer = consumers[user_id];
+  auto& user_consumer = consumers[event.user_id];
   if (user_consumer.empty()) {
     user_consumer = start_dialog(UserCtx{
         .db = db,
         .api = api,
         .events = user_events,
-        .user_id = user_id,
+        .user_id = event.user_id,
     });
   }
   (void)co_await user_consumer.begin();
 
   if (user_consumer.empty()) {
-    consumers.erase(user_id);
+    consumers.erase(event.user_id);
   }
 }
 
@@ -43,4 +67,22 @@ std::vector<Event>& EventBroker::get_events(std::int64_t user_id) {
   return events[user_id];
 }
 
+void EventBroker::save() {
+  std::vector<int64_t> consumed_events;
+
+  for (auto& [_, events] : events) {
+    for (auto& e : events) {
+      if (e.consumed) {
+        consumed_events.emplace_back(e.event_id);
+      }
+    }
+  }
+
+  for (auto& [_, events] : events) {
+    events.erase(std::remove_if(events.begin(), events.end(), [](Event& e) { return e.consumed; }),
+                 events.end());
+  }
+
+  db.consumeEvents(consumed_events);
+}
 }  // namespace bot

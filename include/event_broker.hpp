@@ -25,10 +25,10 @@ struct EventBroker {
   void save();
 
  private:
-  Database& db;
-  const tgbm::api::telegram& api;
-  std::map<std::int64_t, std::vector<Event>> events;
-  std::unordered_map<std::int64_t, consumer_t> consumers;
+  Database& db_;
+  const tgbm::api::telegram& api_;
+  std::map<std::int64_t, std::vector<Event>> events_;
+  std::unordered_map<std::int64_t, consumer_t> consumers_;
 };
 
 }  // namespace bot

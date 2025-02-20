@@ -21,28 +21,29 @@ tgbm::api::optional<EventRawData> generate_event(tgbm::api::Update u, Database& 
 }
 }  // namespace
 
-EventBroker::EventBroker(const tgbm::api::telegram& api, Database& db) noexcept : api(api), db(db) {
+EventBroker::EventBroker(const tgbm::api::telegram& api, Database& db) noexcept : api_(api), db_(db) {
 }
 
 dd::task<void> EventBroker::process_update(tgbm::api::Update update) {
-  auto _event = generate_event(std::move(update), db);
+  auto _event = generate_event(std::move(update), db_);
   if (!_event) {
     co_return;
   }
   auto event = std::move(*_event);
 
-  auto& user_events = events[event.user_id];
+  auto& user_events = events_[event.user_id];
+  auto event_id = db_.addEvent(event);
   user_events.emplace_back(Event{
-      .event_id = db.addEvent(event),
+      .event_id = event_id,
       .ts = event.ts,
       .user_id = event.user_id,
       .meta = std::move(event.meta),
   });
-  auto& user_consumer = consumers[event.user_id];
+  auto& user_consumer = consumers_[event.user_id];
   if (user_consumer.empty()) {
     user_consumer = start_dialog(UserCtx{
-        .db = db,
-        .api = api,
+        .db = db_,
+        .api = api_,
         .events = user_events,
         .user_id = event.user_id,
     });
@@ -50,27 +51,34 @@ dd::task<void> EventBroker::process_update(tgbm::api::Update update) {
   (void)co_await user_consumer.begin();
 
   if (user_consumer.empty()) {
-    consumers.erase(event.user_id);
+    user_consumer = start_dialog(UserCtx{
+        .db = db_,
+        .api = api_,
+        .events = user_events,
+        .user_id = event.user_id,
+    });
   }
+
+  (void)co_await user_consumer.begin();
 }
 
 void EventBroker::load() {
-  auto db_events = db.getEvents();
+  auto db_events = db_.getEvents();
   auto fn = [](const Event& l, const Event& r) { return l.user_id == r.user_id; };
   for (auto&& group : db_events | std::ranges::views::chunk_by(fn)) {
     auto user_id = group.front().user_id;
-    std::move(group.begin(), group.end(), std::back_inserter(events[user_id]));
+    std::move(group.begin(), group.end(), std::back_inserter(events_[user_id]));
   }
 }
 
 std::vector<Event>& EventBroker::get_events(std::int64_t user_id) {
-  return events[user_id];
+  return events_[user_id];
 }
 
 void EventBroker::save() {
   std::vector<int64_t> consumed_events;
 
-  for (auto& [_, events] : events) {
+  for (auto& [_, events] : events_) {
     for (auto& e : events) {
       if (e.consumed) {
         consumed_events.emplace_back(e.event_id);
@@ -78,11 +86,12 @@ void EventBroker::save() {
     }
   }
 
-  for (auto& [_, events] : events) {
+  for (auto& [_, events] : events_) {
     events.erase(std::remove_if(events.begin(), events.end(), [](Event& e) { return e.consumed; }),
                  events.end());
   }
-
-  db.consumeEvents(consumed_events);
+  if (!consumed_events.empty()) {
+    db_.consumeEvents(consumed_events);
+  }
 }
 }  // namespace bot

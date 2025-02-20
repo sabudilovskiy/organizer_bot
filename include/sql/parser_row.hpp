@@ -8,12 +8,10 @@ namespace bot::sql {
 template <typename T>
 struct parser_row {
   static T parse(SQLite::Statement& statement) {
-    T out;
     if (statement.getColumnCount() != 1) {
       throw std::runtime_error("Unexpected size");
     }
-    parser_column<T>::parse(statement, 0);
-    return out;
+    return parser_column<T>::parse(statement, 0);
   }
 };
 

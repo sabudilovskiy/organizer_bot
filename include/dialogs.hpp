@@ -1,15 +1,8 @@
 #pragma once
 #include "event_broker.hpp"
-#include "tgbm/api/telegram.hpp"
+#include "user_context.hpp"
 
 namespace bot {
-
-struct UserCtx {
-  Database& db;
-  const tgbm::api::telegram& api;
-  std::vector<Event>& events;
-  std::int64_t user_id;
-};
 
 consumer_t start_dialog(UserCtx ctx);
 

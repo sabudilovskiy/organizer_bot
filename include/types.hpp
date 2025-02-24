@@ -6,12 +6,15 @@
 #include <string>
 #include <tgbm/api/optional.hpp>
 
-#include "json.hpp"
+#include "json/value.hpp"
 #include "time.hpp"
 
 namespace bot {
 
-enum struct EventType { message };
+enum struct EventType {
+  message,
+  callback_query,
+};
 
 struct Event {
   std::int64_t event_id;

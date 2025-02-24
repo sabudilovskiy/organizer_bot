@@ -36,7 +36,7 @@ json_value parser_column<json_value>::parse(SQLite::Statement& statement, std::s
   if (!res.is_object()) {
     throw std::runtime_error("Unexpected type");
   }
-  return json_value{std::move(res.as_object())};
+  return json_value(std::move(res.as_object()));
 }
 
 std::string parser_column<std::string>::parse(SQLite::Statement& statement, std::size_t index) {

@@ -3,7 +3,7 @@
 #include <SQLiteCpp/Statement.h>
 #include <tgbm/api/optional.hpp>
 
-#include "json.hpp"
+#include "json/value.hpp"
 #include "time.hpp"
 
 namespace bot::sql {

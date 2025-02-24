@@ -3,6 +3,10 @@ project(bot)
 
 include(cmake/deps.cmake)
 
+target_include_directories(tgbmlib PUBLIC "${CMAKE_SOURCE_DIR}/logger")
+
+get_target_property(TGBM_INCLUDE_DIRS tgbmlib INTERFACE_INCLUDE_DIRECTORIES)
+
 file(GLOB_RECURSE OBJS "src/*.cpp")
 add_library(bot_objs ${OBJS})
 target_include_directories(bot_objs PUBLIC include)

@@ -2,17 +2,12 @@
 
 #include <boost/json.hpp>
 
-#include <cstdint>
-#include <stdexcept>
 #include <tgbm/api/optional.hpp>
-#include <type_traits>
 #include <SQLiteCpp/Statement.h>
 #include <SQLiteCpp/Database.h>
 
-#include "json.hpp"
 #include "sql/binder.hpp"
 #include "sql/parser.hpp"
-#include "time.hpp"
 
 namespace bot::sql {
 

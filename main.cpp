@@ -10,6 +10,7 @@
 
 #include "database.hpp"
 #include "event_broker.hpp"
+#include "tgbm/logger.hpp"
 
 using namespace bot;
 
@@ -46,8 +47,12 @@ dd::task<void> start_main_task(tgbm::bot& bot, EventBroker& event_broker) {
 
   fmt::println("launching bot, info: {}", co_await bot.api.getMe());
   co_foreach(auto u, bot.updates(lp_options)) {
-    co_await event_broker.process_update(std::move(u));
-    event_broker.save();
+    try {
+      co_await event_broker.process_update(std::move(u));
+      event_broker.save();
+    } catch (std::exception& exc) {
+      TGBM_LOG("error while update processing : {}", exc.what());
+    }
   }
 }
 int main() {

@@ -1,4 +1,6 @@
 #include "dialogs.hpp"
+#include "macro.hpp"
+#include "menu.hpp"
 
 namespace bot {
 
@@ -25,8 +27,10 @@ consumer_t read_text(UserCtx ctx, const User& user, std::string& text, std::stri
   if (try_read())
     co_return;
 
-  (void)co_await ctx.api.sendMessage(
-      tgbm::api::send_message_request{.chat_id = user.chat_id, .text = message});
+  (void)co_await ctx.api.sendMessage(tgbm::api::send_message_request{
+      .chat_id = user.chat_id,
+      .text = std::move(message),
+  });
   for (;;) {
     co_yield {};
     if (try_read())
@@ -34,7 +38,10 @@ consumer_t read_text(UserCtx ctx, const User& user, std::string& text, std::stri
   }
 }
 
+enum struct Question { yes, no };
+
 consumer_t start_dialog(UserCtx ctx) {
+  TGBM_LOG("start_dialog: {}", ctx.user_id);
   auto user = ctx.db.fetchUser(RequestUser{.user_id = ctx.user_id});
   auto& api = ctx.api;
 
@@ -42,12 +49,25 @@ consumer_t start_dialog(UserCtx ctx) {
 
   consume_first_event(ctx);
 
-  co_yield dd::elements_of(read_text(ctx, user, name, "Type your name: "));
+  Question res;
+  // clang-format off
+  auto menu = Menu<Question>{"Wtf?"}
+    .add("yes", Question::yes)
+    .add("no", Question::no);
+  // clang-format on
+  $await_all(menu.show(ctx, user, res));
 
-  co_yield dd::elements_of(read_text(ctx, user, date, "Type your date: "));
-
-  (void)co_await api.sendMessage(tgbm::api::send_message_request{
-      .chat_id = user.chat_id, .text = fmt::format("End dialog. name: {}, date: {}", name, date)});
+  if (res == Question::yes) {
+    (void)co_await ctx.api.sendMessage(tgbm::api::send_message_request{
+        .chat_id = user.chat_id,
+        .text = "You answer: Yes",
+    });
+  } else {
+    (void)co_await ctx.api.sendMessage(tgbm::api::send_message_request{
+        .chat_id = user.chat_id,
+        .text = "You answer: No",
+    });
+  }
 }
 
 }  // namespace bot

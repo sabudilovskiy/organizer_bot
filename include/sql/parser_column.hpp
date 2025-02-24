@@ -2,7 +2,7 @@
 
 #include <SQLiteCpp/Statement.h>
 
-#include "json.hpp"
+#include "json/value.hpp"
 
 namespace bot::sql {
 

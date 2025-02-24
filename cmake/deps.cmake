@@ -3,7 +3,7 @@ include("${CMAKE_SOURCE_DIR}/cmake/get_cpm.cmake")
 CPMAddPackage(
   NAME TGBM
   GIT_REPOSITORY https://github.com/bot-motherlib/TGBM
-  GIT_TAG        v1.0.7
+  GIT_TAG        v1.0.8
 )
 
 CPMAddPackage(

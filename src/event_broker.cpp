@@ -1,23 +1,38 @@
 #include "event_broker.hpp"
+
 #include "dialogs.hpp"
+#include "formatters/aggregate.hpp"
+#include "tgbm_replace/logger.hpp"
 
 namespace bot {
 
 namespace {
-tgbm::api::optional<EventRawData> generate_event(tgbm::api::Update u, Database& db) {
-  if (auto* msg = u.get_message(); msg->from && msg->from->id && msg->chat->type == "private") {
+dd::task<tgbm::api::optional<EventRawData>> generate_event(tgbm::api::Update u, Database& db,
+                                                           const tgbm::api::telegram& api) {
+  if (auto* msg = u.get_message(); msg && msg->from && msg->chat && msg->chat->type == "private") {
     db.fetchUser(RequestUser{.user_id = msg->from->id, .chat_id = msg->chat->id});
     json_value meta = json_value::object();
     meta["text"] = msg->text;
-    return EventRawData{
+    co_return EventRawData{
         .ts = now(),
         .user_id = msg->from->id,
         .type = EventType::message,
-        .meta = meta,
+        .meta = std::move(meta),
+    };
+  } else if (auto* query = u.get_callback_query(); query && query->from) {
+    json_value meta = json_value::object();
+    meta["id"] = query->id;
+    meta["data"] = query->data;
+
+    co_return EventRawData{
+        .ts = now(),
+        .user_id = query->from->id,
+        .type = EventType::callback_query,
+        .meta = std::move(meta),
     };
   }
 
-  return std::nullopt;
+  co_return std::nullopt;
 }
 }  // namespace
 
@@ -25,11 +40,12 @@ EventBroker::EventBroker(const tgbm::api::telegram& api, Database& db) noexcept 
 }
 
 dd::task<void> EventBroker::process_update(tgbm::api::Update update) {
-  auto _event = generate_event(std::move(update), db_);
+  auto _event = co_await generate_event(std::move(update), db_, api_);
   if (!_event) {
     co_return;
   }
   auto event = std::move(*_event);
+  TGBM_LOG_EVENT("generated event: {}", event);
 
   auto& user_events = events_[event.user_id];
   auto event_id = db_.addEvent(event);
@@ -37,6 +53,7 @@ dd::task<void> EventBroker::process_update(tgbm::api::Update update) {
       .event_id = event_id,
       .ts = event.ts,
       .user_id = event.user_id,
+      .type = event.type,
       .meta = std::move(event.meta),
   });
   auto& user_consumer = consumers_[event.user_id];

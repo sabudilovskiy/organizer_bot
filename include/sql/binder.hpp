@@ -3,6 +3,7 @@
 #include <SQLiteCpp/Statement.h>
 #include <tgbm/api/optional.hpp>
 
+#include "event.hpp"
 #include "json/value.hpp"
 #include "time.hpp"
 
@@ -74,6 +75,13 @@ struct binder<T> {
   static void bind(SQLite::Statement& statement, T arg, std::size_t& cur_index) {
     std::string_view str = magic_enum::enum_name(arg);
     statement.bind(cur_index++, std::string(str));
+  }
+};
+
+template <>
+struct binder<EventMeta> {
+  static void bind(SQLite::Statement& statement, const EventMeta& meta, std::size_t& cur_index) {
+    statement.bind(cur_index++, to_json_str(meta));
   }
 };
 }  // namespace bot::sql

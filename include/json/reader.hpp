@@ -54,14 +54,14 @@ template <typename T>
 struct json_reader<T> {
   static T read(const boost::json::value& v) {
     T res;
+    auto& obj = v.as_object();
     pfr_extension::visit_object(res, [&]<typename Info, typename F>(F& field) {
-      auto& obj = v.as_object();
       std::string_view key = Info::name.AsStringView();
       auto it = obj.find(key);
       if (it == obj.end()) {
         throw std::runtime_error("not found");
       }
-      field = json_reader<F>(it->value());
+      field = json_reader<F>::read(it->value());
     });
     return res;
   }

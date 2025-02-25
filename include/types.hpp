@@ -11,27 +11,6 @@
 
 namespace bot {
 
-enum struct EventType {
-  message,
-  callback_query,
-};
-
-struct Event {
-  std::int64_t event_id;
-  ts_t ts;
-  std::int64_t user_id;
-  EventType type;
-  json_value meta = json_value::object();
-  bool consumed = {};
-};
-
-struct EventRawData {
-  ts_t ts;
-  std::int64_t user_id;
-  EventType type;
-  json_value meta;
-};
-
 struct Task {
   std::int64_t id;
   std::int64_t user_id;

@@ -4,10 +4,10 @@
 
 namespace bot {
 
-consumer_t start_dialog(UserCtx ctx);
+consumer_t start_dialog(Context ctx);
 
-consumer_t create_task(UserCtx ctx);
+consumer_t create_task(Context ctx);
 
-consumer_t read_text(UserCtx ctx, std::string& text);
+consumer_t read_text(Context ctx, std::string& text);
 
 }  // namespace bot

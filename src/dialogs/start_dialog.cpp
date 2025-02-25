@@ -4,23 +4,18 @@
 
 namespace bot {
 
-void consume_first_event(UserCtx ctx) {
-  for (auto& e : ctx.events) {
-    if (!e.consumed && e.type == EventType::message) {
-      e.consumed = true;
-      return;
-    }
+void consume_first_event(Context ctx) {
+  for (auto& e : ctx.events | events::only_messages | events::take(1)) {
+    e.consumed = true;
   }
 }
 
-consumer_t read_text(UserCtx ctx, const User& user, std::string& text, std::string message) {
+consumer_t read_text(Context ctx, const User& user, std::string& text, std::string message) {
   auto try_read = [&]() {
-    for (auto& e : ctx.events) {
-      if (!e.consumed && e.type == EventType::message) {
-        text = e.meta["text"].as<std::string>();
-        e.consumed = true;
-        return true;
-      }
+    for (auto& e : ctx.events | events::only_messages) {
+      text = e.message_meta().text;
+      e.consumed = true;
+      return true;
     }
     return false;
   };
@@ -40,10 +35,10 @@ consumer_t read_text(UserCtx ctx, const User& user, std::string& text, std::stri
 
 enum struct Question { yes, no };
 
-consumer_t start_dialog(UserCtx ctx) {
+consumer_t start_dialog(Context ctx) {
   TGBM_LOG("start_dialog: {}", ctx.user_id);
   auto user = ctx.db.fetchUser(RequestUser{.user_id = ctx.user_id});
-  auto& api = ctx.api;
+  ContextWithUser ctx_user(ctx, user);
 
   std::string name, date;
 
@@ -51,22 +46,16 @@ consumer_t start_dialog(UserCtx ctx) {
 
   Question res;
   // clang-format off
-  auto menu = Menu<Question>{"Wtf?"}
+  auto menu = Menu<Question>{"Test menu"}
     .add("yes", Question::yes)
     .add("no", Question::no);
   // clang-format on
   $await_all(menu.show(ctx, user, res));
 
   if (res == Question::yes) {
-    (void)co_await ctx.api.sendMessage(tgbm::api::send_message_request{
-        .chat_id = user.chat_id,
-        .text = "You answer: Yes",
-    });
+    $await_all(ctx_user.send_text("Your answer : yes"));
   } else {
-    (void)co_await ctx.api.sendMessage(tgbm::api::send_message_request{
-        .chat_id = user.chat_id,
-        .text = "You answer: No",
-    });
+    $await_all(ctx_user.send_text("Your answer : no"));
   }
 }
 

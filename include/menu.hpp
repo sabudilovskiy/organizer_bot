@@ -5,6 +5,7 @@
 
 #include "errors.hpp"
 #include "event_broker.hpp"
+#include "event_utils.hpp"
 #include "formatters/all.hpp"
 #include "types.hpp"
 #include "user_context.hpp"
@@ -27,7 +28,7 @@ struct Menu {
 
   Menu& add(std::string text, T t);
 
-  consumer_t show(UserCtx ctx, User& user, T& out) &;
+  consumer_t show(Context ctx, User& user, T& out) &;
 
  private:
   std::string title_;
@@ -44,7 +45,7 @@ Menu<T>& Menu<T>::add(std::string text, T t) {
 }
 
 template <typename T>
-[[nodiscard]] consumer_t Menu<T>::show(UserCtx ctx, User& user, T& out) & {
+[[nodiscard]] consumer_t Menu<T>::show(Context ctx, User& user, T& out) & {
   auto& title = title_;
   auto& items = items_;
 
@@ -53,7 +54,6 @@ template <typename T>
 
   for (auto& [item, _] : items_) {
     auto idx = markup.inline_keyboard.size();
-    TGBM_LOG("item: {}, idx: {}", item, idx);
     markup.inline_keyboard.emplace_back().emplace_back(Button{
         .text = item,
         .data = Button::callback_data{fmt::format("{};{}", idx, ts)},
@@ -80,31 +80,27 @@ template <typename T>
   }
 
   for (;;) {
-    for (auto& e : ctx.events) {
+    for (auto& e : ctx.events | events::only_cb_queries) {
       e.consumed = true;
-      if (e.type == EventType::callback_query) {
-        (void)co_await ctx.api
-            .answerCallbackQuery(tgbm::api::answer_callback_query_request{
-                .callback_query_id = e.meta["id"].as<std::string>(),
-            })
-            .wait();
-        auto data = e.meta["data"].as<std::string>();
-        auto res = scn::scan<std::size_t, std::string>(data, "{};{}");
-        if (!res) {
-          TGBM_LOG_CRIT("Menu got bad callback query. Callback data: [{}]", data);
-          throw std::runtime_error("Callback query bug");
-        }
-        auto idx = std::get<0>(res->values());
-        if (idx < 0 || idx >= items_.size()) {
-          TGBM_LOG_CRIT("Menu got bad callback query, idx: [{}], size: {}, items: [{}]", idx, items_.size(),
-                        fmt::join(items_, ","));
-          throw std::runtime_error("Callback query bug");
-        }
-        TGBM_LOG_EVENT("Menu got idx from query : {}", idx);
-        out = items_[idx].t;
-        TGBM_LOG_EVENT("Menu out: {}", out);
-        co_return;
+      (void)co_await ctx.api
+          .answerCallbackQuery(tgbm::api::answer_callback_query_request{
+              .callback_query_id = e.cb_query_meta().id,
+          })
+          .wait();
+      auto data = e.cb_query_meta().data;
+      auto res = scn::scan<std::size_t, std::string>(data, "{};{}");
+      if (!res) {
+        TGBM_LOG_CRIT("Menu got bad callback query. Callback data: [{}]", data);
+        throw std::runtime_error("Callback query bug");
       }
+      auto idx = std::get<0>(res->values());
+      if (idx < 0 || idx >= items_.size()) {
+        TGBM_LOG_CRIT("Menu got bad callback query, idx: [{}], size: {}, items: [{}]", idx, items_.size(),
+                      fmt::join(items_, ","));
+        throw std::runtime_error("Callback query bug");
+      }
+      out = items_[idx].t;
+      co_return;
     }
     co_yield {};
   }

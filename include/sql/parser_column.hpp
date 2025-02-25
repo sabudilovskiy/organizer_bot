@@ -2,6 +2,7 @@
 
 #include <SQLiteCpp/Statement.h>
 
+#include "event.hpp"
 #include "json/value.hpp"
 
 namespace bot::sql {
@@ -27,6 +28,11 @@ struct parser_column<json_value> {
 template <>
 struct parser_column<std::string> {
   static std::string parse(SQLite::Statement& statement, std::size_t index);
+};
+
+template <>
+struct parser_column<EventMeta> {
+  static EventMeta parse(SQLite::Statement& statement, std::size_t index);
 };
 
 template <typename T>

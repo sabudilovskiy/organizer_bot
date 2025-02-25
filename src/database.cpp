@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "sql_utils.hpp"
+#include "tgbm_replace/logger.hpp"
 #include "types.hpp"
 
 namespace bot {
@@ -34,10 +35,10 @@ const std::string q_update_user = "UPDATE users SET message_id = ?, state = ?, m
 const std::string q_get_events = "SELECT ts, user_id, meta FROM events";
 
 const std::string q_add_event =
-    "INSERT INTO events (ts, user_id, type, meta, consumed) VALUES (?, ?, ?, ?, 0) RETURNING event_id";
+    "INSERT INTO events (ts, user_id, meta, consumed) VALUES (?, ?, ?, 0) RETURNING event_id";
 
 const std::string q_select_events =
-    "SELECT event_id, ts, user_id, type, meta, consumed FROM events where consumed = 0 ORDER BY ts ASC, "
+    "SELECT event_id, ts, user_id, meta, consumed FROM events where consumed = 0 ORDER BY ts ASC, "
     "user_id ASC";
 
 const std::string q_init = R"(
@@ -59,11 +60,11 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS events (
       event_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+      user_id INTEGER,
       ts TEXT, 
-      user_id INTEGER, 
-      type TEXT,
       meta TEXT, 
-      consumed INTEGER);
+      consumed INTEGER
+);
 
 CREATE INDEX IF NOT EXISTS events_idx ON events (user_id, consumed, ts);
 CREATE INDEX IF NOT EXISTS tasks_idx ON events (user_id);
@@ -96,7 +97,11 @@ std::vector<Task> Database::searchTasks(std::int64_t user_id, const std::string&
 }
 
 void Database::createTables() {
-  db->exec(q_init);
+  try {
+    db->exec(q_init);
+  } catch (std::exception& exc) {
+    TGBM_LOG_CRIT("Error while create tables: {}", exc.what());
+  }
 }
 
 Database::Database(const std::string& dbPath) {
@@ -130,16 +135,12 @@ tgbm::api::optional<Task> Database::find_task(std::int64_t user_id, std::int64_t
   return sql::execute<tgbm::api::optional<Task>>(db, q_find_task_by_id, user_id, task_id);
 }
 
-std::int64_t Database::addEvent(ts_t ts, std::int64_t user_id, EventType type, const json_value& meta) {
-  return sql::execute<int64_t>(db, q_add_event, ts, user_id, type, meta);
-}
-
 std::vector<Event> Database::getEvents() {
   return sql::execute<std::vector<Event>>(db, q_select_events);
 }
 
-std::int64_t Database::addEvent(const EventRawData& e) {
-  return addEvent(e.ts, e.user_id, e.type, e.meta);
+std::int64_t Database::addEvent(const Event& e) {
+  return sql::execute<int64_t>(db, q_add_event, e.ts, e.user_id, e.meta);
 }
 
 void Database::consumeEvents(const std::vector<int64_t>& event_ids) {

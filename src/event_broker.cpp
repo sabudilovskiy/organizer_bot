@@ -9,28 +9,27 @@
 namespace bot {
 
 namespace {
-dd::task<tgbm::api::optional<EventRawData>> generate_event(tgbm::api::Update u, Database& db,
-                                                           const tgbm::api::telegram& api) {
+dd::task<tgbm::api::optional<Event>> generate_event(tgbm::api::Update u, Database& db,
+                                                    const tgbm::api::telegram& api) {
   if (auto* msg = u.get_message(); msg && msg->from && msg->chat && msg->chat->type == "private") {
     db.fetchUser(RequestUser{.user_id = msg->from->id, .chat_id = msg->chat->id});
-    json_value meta = json_value::object();
-    meta["text"] = msg->text;
-    co_return EventRawData{
-        .ts = now(),
+    co_return Event{
         .user_id = msg->from->id,
-        .type = EventType::message,
-        .meta = std::move(meta),
-    };
-  } else if (auto* query = u.get_callback_query(); query && query->from) {
-    json_value meta = json_value::object();
-    meta["id"] = query->id;
-    meta["data"] = query->data;
-
-    co_return EventRawData{
         .ts = now(),
+        .meta =
+            MessageMeta{
+                .text = *msg->text,
+            },
+    };
+  } else if (auto* query = u.get_callback_query(); query && query->from && query->data) {
+    co_return Event{
         .user_id = query->from->id,
-        .type = EventType::callback_query,
-        .meta = std::move(meta),
+        .ts = now(),
+        .meta =
+            CBQueryMeta{
+                .id = query->id,
+                .data = *query->data,
+            },
     };
   }
 
@@ -50,17 +49,11 @@ dd::task<void> EventBroker::process_update(tgbm::api::Update update) {
   TGBM_LOG_EVENT("Generated: {}", event);
 
   auto& user_events = events_[event.user_id];
-  auto event_id = db_.addEvent(event);
-  user_events.emplace_back(Event{
-      .event_id = event_id,
-      .ts = event.ts,
-      .user_id = event.user_id,
-      .type = event.type,
-      .meta = std::move(event.meta),
-  });
+  event.event_id = db_.addEvent(event);
+  user_events.emplace_back(std::move(event));
   auto& user_consumer = consumers_[event.user_id];
   if (user_consumer.empty()) {
-    user_consumer = start_dialog(UserCtx{
+    user_consumer = start_dialog(Context{
         .db = db_,
         .api = api_,
         .events = user_events,
@@ -70,7 +63,7 @@ dd::task<void> EventBroker::process_update(tgbm::api::Update update) {
   (void)co_await user_consumer.begin();
 
   if (user_consumer.empty()) {
-    user_consumer = start_dialog(UserCtx{
+    user_consumer = start_dialog(Context{
         .db = db_,
         .api = api_,
         .events = user_events,
@@ -111,6 +104,16 @@ void EventBroker::save() {
   }
   if (!consumed_events.empty()) {
     db_.consumeEvents(consumed_events);
+  }
+}
+
+dd::task<void> EventBroker::safe_process_update(tgbm::api::Update update) noexcept {
+  auto update_id = update.update_id;
+  auto t = process_update(std::move(update));
+  try {
+    co_await t;
+  } catch (std::exception& exc) {
+    TGBM_LOG_ERROR("Fail processing update {}. Happens: {}", update_id, exc.what());
   }
 }
 }  // namespace bot

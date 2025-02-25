@@ -15,6 +15,9 @@ using consumer_t = dd::channel<dd::nothing_t>;
 struct EventBroker {
   EventBroker(const tgbm::api::telegram& api, Database& db) noexcept;
 
+  // log and ignore or exceptions
+  dd::task<void> safe_process_update(tgbm::api::Update update) noexcept;
+
   dd::task<void> process_update(tgbm::api::Update update);
 
   std::vector<Event>& get_events(std::int64_t user_id);

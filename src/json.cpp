@@ -75,4 +75,8 @@ json_value json_value::array() noexcept {
   return res;
 }
 
+void json_writer<bool>::write(boost::json::value& v, bool b) {
+  v = b;
+}
+
 }  // namespace bot

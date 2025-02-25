@@ -5,6 +5,7 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <optional>
 
+#include "event.hpp"
 #include "types.hpp"
 
 namespace bot {
@@ -28,10 +29,8 @@ struct Database {
   void consumeEvents(const std::vector<int64_t>& event_ids);
 
   // returns: event_id
-  std::int64_t addEvent(ts_t ts, std::int64_t user_id, EventType type, const json_value& meta);
-
-  // returns: event_id
-  std::int64_t addEvent(const EventRawData& data);
+  // ignore event_id from
+  std::int64_t addEvent(const Event& event);
 
   std::vector<Event> getEvents();
 

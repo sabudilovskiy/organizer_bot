@@ -60,4 +60,16 @@ ts_t parser_column<ts_t>::parse(SQLite::Statement& statement, std::size_t index)
   }
   return parse_ts(col.getString());
 }
+
+EventMeta parser_column<EventMeta>::parse(SQLite::Statement& statement, std::size_t index) {
+  if (statement.getColumnCount() <= index) {
+    throw std::runtime_error("too big index");
+  }
+  auto col = statement.getColumn(index);
+  if (!col.isText()) {
+    throw std::runtime_error("Unexpected type");
+  }
+  return from_json_str<EventMeta>(col.getString());
+}
+
 }  // namespace bot::sql

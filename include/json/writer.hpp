@@ -21,6 +21,11 @@ struct json_writer<int64_t> {
 };
 
 template <>
+struct json_writer<bool> {
+  static void write(boost::json::value& v, bool b);
+};
+
+template <>
 struct json_writer<ts_t> {
   static void write(boost::json::value& v, ts_t ts);
 };

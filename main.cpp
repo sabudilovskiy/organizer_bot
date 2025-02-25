@@ -43,19 +43,13 @@ dd::task<void> start_main_task(tgbm::bot& bot, EventBroker& event_broker) {
     event_broker.save();
   };
 
-  event_broker.load();
   auto me = co_await bot.api.getMe();
   TGBM_LOG_INFO("launching bot, info: {}", me);
 
   co_foreach(auto u, bot.updates(lp_options)) {
     auto update_id = u.update_id;
-    try {
-      co_await event_broker.process_update(std::move(u));
-      event_broker.save();
-      // TODO: UB from menu
-    } catch (std::exception& exc) {
-      TGBM_LOG_ERROR("Fail proccess update: {}", update_id);
-    }
+    co_await event_broker.safe_process_update(std::move(u));
+    event_broker.save();
   }
 }
 int main() {
@@ -75,6 +69,7 @@ int main() {
   tgbm::bot bot{token /*"api.telegram.org", "some_ssl_certificate"*/};
   Database db("bot.db");
   EventBroker event_broker(bot.api, db);
+  event_broker.load();
   start_main_task(bot, event_broker).start_and_detach();
   saving_database(bot, event_broker).start_and_detach();
   bot.run();

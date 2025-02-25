@@ -31,7 +31,7 @@ struct User {
   tgbm::api::optional<int64_t> message_id;
   int64_t additional_messages = 0;
 
-  static constexpr int64_t max_additional_messages = 4;
+  static constexpr int64_t max_additional_messages = 1;
 
   bool need_new_message() {
     return additional_messages > max_additional_messages;

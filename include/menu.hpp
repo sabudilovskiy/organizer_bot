@@ -95,7 +95,7 @@ template <typename T>
         TGBM_LOG_CRIT("Menu got bad callback query. Callback data: [{}]", data);
         throw std::runtime_error("Callback query bug");
       }
-      auto idx = std::get<0>(res->values());
+      auto [idx, _] = res->values();
       if (idx < 0 || idx >= items_.size()) {
         TGBM_LOG_CRIT("Menu got bad callback query, idx: [{}], size: {}, items: [{}]", idx, items_.size(),
                       fmt::join(items_, ","));

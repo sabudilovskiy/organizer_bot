@@ -27,7 +27,7 @@ dd::task<void> saving_database(tgbm::bot& bot, EventBroker& event_broker) {
   while (!errc) {
     co_await bot.sleep(std::chrono::seconds(3), errc);
     if (need_to_stop.load(std::memory_order::relaxed)) {
-      fmt::println("Try to stop bot");
+      TGBM_LOG_INFO("Try to stop bot...");
       bot.stop();
       event_broker.save();
       co_return;
@@ -44,24 +44,27 @@ dd::task<void> start_main_task(tgbm::bot& bot, EventBroker& event_broker) {
   };
 
   event_broker.load();
+  auto me = co_await bot.api.getMe();
+  TGBM_LOG_INFO("launching bot, info: {}", me);
 
-  fmt::println("launching bot, info: {}", co_await bot.api.getMe());
   co_foreach(auto u, bot.updates(lp_options)) {
+    auto update_id = u.update_id;
     try {
       co_await event_broker.process_update(std::move(u));
       event_broker.save();
+      // TODO: UB from menu
     } catch (std::exception& exc) {
-      TGBM_LOG("error while update processing : {}", exc.what());
+      TGBM_LOG_ERROR("Fail proccess update: {}", update_id);
     }
   }
 }
 int main() {
   on_scope_exit {
-    fmt::println("Bot stopped");
+    TGBM_LOG_INFO("Bot stopped.");
   };
   std::ifstream token_file("token.txt");
   if (!token_file.is_open()) {
-    fmt::println(
+    TGBM_LOG_CRIT(
         "launching telegram bot requires bot token from @BotFather. Create token.txt and place token.");
     return -1;
   }

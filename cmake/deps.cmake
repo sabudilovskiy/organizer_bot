@@ -17,3 +17,11 @@ CPMAddPackage(
   GIT_REPOSITORY https://github.com/Neargye/magic_enum
   GIT_TAG        origin/master
 )
+
+SET(SCN_DISABLE_FAST_FLOAT ON)
+
+CPMAddPackage(
+  NAME scnlib
+  GIT_REPOSITORY https://github.com/eliaskosunen/scnlib
+  GIT_TAG        v4.0.1
+)

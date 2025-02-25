@@ -3,7 +3,6 @@
 #include <kelcoro/channel.hpp>
 #include <kelcoro/generator.hpp>
 #include <kelcoro/task.hpp>
-#include <ranges>
 #include <tgbm/api/telegram.hpp>
 
 #include "database.hpp"

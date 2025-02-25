@@ -1,5 +1,7 @@
 #include "event_broker.hpp"
 
+#include <ranges>
+
 #include "dialogs.hpp"
 #include "formatters/aggregate.hpp"
 #include "tgbm_replace/logger.hpp"
@@ -45,7 +47,7 @@ dd::task<void> EventBroker::process_update(tgbm::api::Update update) {
     co_return;
   }
   auto event = std::move(*_event);
-  TGBM_LOG_EVENT("generated event: {}", event);
+  TGBM_LOG_EVENT("Generated: {}", event);
 
   auto& user_events = events_[event.user_id];
   auto event_id = db_.addEvent(event);

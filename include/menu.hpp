@@ -28,7 +28,7 @@ struct Menu {
 
   Menu& add(std::string text, T t);
 
-  consumer_t show(Context ctx, User& user, T& out) &;
+  consumer_t show(ContextWithUser ctx, T& out) &;
 
  private:
   std::string title_;
@@ -45,7 +45,8 @@ Menu<T>& Menu<T>::add(std::string text, T t) {
 }
 
 template <typename T>
-[[nodiscard]] consumer_t Menu<T>::show(Context ctx, User& user, T& out) & {
+[[nodiscard]] consumer_t Menu<T>::show(ContextWithUser ctx, T& out) & {
+  auto& user = ctx.user;
   auto& title = title_;
   auto& items = items_;
 
@@ -60,16 +61,17 @@ template <typename T>
     });
   }
 
-  if (!user.message_id.has_value()) {
+  if (!user.message_id.has_value() || user.need_new_message()) {
     tgbm::api::Message msg = co_await ctx.api.sendMessage(tgbm::api::send_message_request{
         .chat_id = user.chat_id,
         .text = title_,
         .reply_markup = markup,
     });
     user.message_id = msg.message_id;
+    user.additional_messages = 0;
     ctx.db.updateUser(user);
   } else {
-    (void)co_await ctx.api
+    co_await ctx.api
         .editMessageText(tgbm::api::edit_message_text_request{
             .text = title_,
             .chat_id = user.chat_id,

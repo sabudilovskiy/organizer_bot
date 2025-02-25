@@ -15,8 +15,6 @@ struct Database {
 
   User fetchUser(const RequestUser& user);
 
-  void resetUser(User& user);
-
   void updateUser(const User& user);
 
   void addTask(std::int64_t user_id, const std::string& title, const std::string& description);

@@ -101,7 +101,7 @@ std::string to_json_str(const T& t) {
 
 template <typename T>
 T from_json_str(std::string_view j) {
-  boost::json::value v(j);
+  auto v = boost::json::parse(j);
   return json_view(v).as<T>();
 }
 

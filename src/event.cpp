@@ -53,4 +53,11 @@ MessageMeta& Event::message_meta() {
   return std::get<MessageMeta>(meta);
 }
 
+const CommandMeta& Event::command_meta() const {
+  return std::get<CommandMeta>(meta);
+}
+
+CommandMeta& Event::command_meta() {
+  return std::get<CommandMeta>(meta);
+}
 }  // namespace bot

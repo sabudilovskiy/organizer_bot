@@ -3,6 +3,7 @@
 #include <ranges>
 
 #include "dialogs.hpp"
+#include "event_utils.hpp"
 #include "formatters/aggregate.hpp"
 #include "tgbm_replace/logger.hpp"
 
@@ -13,13 +14,16 @@ dd::task<tgbm::api::optional<Event>> generate_event(tgbm::api::Update u, Databas
                                                     const tgbm::api::telegram& api) {
   if (auto* msg = u.get_message(); msg && msg->from && msg->chat && msg->chat->type == "private") {
     db.fetchUser(RequestUser{.user_id = msg->from->id, .chat_id = msg->chat->id});
+    EventMeta meta;
+    if (msg->text->starts_with("/")) {
+      meta = CommandMeta{.text = msg->text->substr(1)};
+    } else {
+      meta = MessageMeta{.text = *msg->text};
+    }
     co_return Event{
         .user_id = msg->from->id,
         .ts = now(),
-        .meta =
-            MessageMeta{
-                .text = *msg->text,
-            },
+        .meta = std::move(meta),
     };
   } else if (auto* query = u.get_callback_query(); query && query->from && query->data) {
     co_return Event{
@@ -52,18 +56,23 @@ dd::task<void> EventBroker::process_update(tgbm::api::Update update) {
   event.event_id = db_.addEvent(event);
   user_events.emplace_back(std::move(event));
   auto& user_consumer = consumers_[event.user_id];
-  if (user_consumer.empty()) {
-    user_consumer = start_dialog(Context{
-        .db = db_,
-        .api = api_,
-        .events = user_events,
-        .user_id = event.user_id,
-    });
+  if (user_consumer.empty() || events::should_main_menu(user_events)) {
+    auto user = db_.fetchUser(RequestUser{.user_id = event.user_id});
+    user.set_need_new_message();
+
+    user_consumer = main_menu(
+        Context{
+            .db = db_,
+            .api = api_,
+            .events = user_events,
+            .user_id = event.user_id,
+        },
+        std::move(user));
   }
   (void)co_await user_consumer.begin();
 
   if (user_consumer.empty()) {
-    user_consumer = start_dialog(Context{
+    user_consumer = main_menu(Context{
         .db = db_,
         .api = api_,
         .events = user_events,

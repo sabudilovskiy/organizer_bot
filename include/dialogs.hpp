@@ -4,10 +4,24 @@
 
 namespace bot {
 
-consumer_t start_dialog(Context ctx);
+enum struct MainMenu {
+  sheduller,
+  tasks,
+  calls,
+  settings,
+};
 
-consumer_t create_task(Context ctx);
+consumer_t main_menu(Context ctx);
+consumer_t main_menu(Context ctx, User user);
 
-consumer_t read_text(Context ctx, std::string& text);
+enum struct ShedulerMenu {
+  add,
+  list,
+  repeatable,
+  reminders,
+  main_menu,
+};
+
+consumer_t sheduler_menu(ContextWithUser ctx);
 
 }  // namespace bot

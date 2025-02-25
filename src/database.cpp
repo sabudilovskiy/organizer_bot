@@ -27,10 +27,11 @@ const std::string q_find_task_by_id =
     "FROM tasks WHERE user_id = ? AND id = ?";
 
 const std::string q_insert_user =
-    "INSERT INTO users (user_id, chat_id, message_id, state, meta) VALUES (?, ?, ?, ?, ?)";
+    "INSERT INTO users (user_id, chat_id, message_id, additional_messages) VALUES (?, ?, ?, ?)";
 const std::string q_get_user =
-    "SELECT user_id, chat_id, message_id, state, meta FROM users WHERE user_id = ?";
-const std::string q_update_user = "UPDATE users SET message_id = ?, state = ?, meta = ? WHERE user_id = ?";
+    "SELECT user_id, chat_id, message_id, additional_messages FROM users WHERE user_id = ?";
+const std::string q_update_user =
+    "UPDATE users SET message_id = ?, additional_messages = ? WHERE user_id = ?";
 
 const std::string q_get_events = "SELECT ts, user_id, meta FROM events";
 
@@ -38,7 +39,7 @@ const std::string q_add_event =
     "INSERT INTO events (ts, user_id, meta, consumed) VALUES (?, ?, ?, 0) RETURNING event_id";
 
 const std::string q_select_events =
-    "SELECT event_id, ts, user_id, meta, consumed FROM events where consumed = 0 ORDER BY ts ASC, "
+    "SELECT event_id, user_id, ts, consumed, meta FROM events where consumed = 0 ORDER BY ts ASC, "
     "user_id ASC";
 
 const std::string q_init = R"(
@@ -47,8 +48,7 @@ CREATE TABLE IF NOT EXISTS users (
       user_id INTEGER PRIMARY KEY, 
       chat_id INTEGER, 
       message_id INTEGER, 
-      state TEXT, 
-      meta TEXT);
+      additional_messages INTEGER);
 
  CREATE TABLE IF NOT EXISTS tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -123,12 +123,7 @@ User Database::fetchUser(const RequestUser& user) {
 }
 
 void Database::updateUser(const User& user) {
-  sql::execute<void>(db, q_update_user, user.message_id, user.state, user.meta, user.user_id);
-}
-
-void Database::resetUser(User& user) {
-  user.reset();
-  updateUser(user);
+  sql::execute<void>(db, q_update_user, user.message_id, user.additional_messages, user.user_id);
 }
 
 tgbm::api::optional<Task> Database::find_task(std::int64_t user_id, std::int64_t task_id) {

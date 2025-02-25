@@ -34,8 +34,8 @@ struct ContextWithUser {
       : db(ctx.db), api(ctx.api), events(ctx.events), user_id(ctx.user_id), user(user) {
   }
 
-  consumer_t send_text(std::string text) const;
-  consumer_t delete_message(int64_t id) const;
+  consumer_t send_text(std::string text);
+  consumer_t delete_message(int64_t id);
 };
 
 }  // namespace bot

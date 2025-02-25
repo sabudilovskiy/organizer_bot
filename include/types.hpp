@@ -29,12 +29,16 @@ struct User {
   int64_t user_id;
   int64_t chat_id;
   tgbm::api::optional<int64_t> message_id;
-  std::string state = std::string(states::k_init);
-  json_value meta = json_value::object();
+  int64_t additional_messages = 0;
 
-  void reset() noexcept {
-    state = std::string(states::k_init);
-    meta = json_value::object();
+  static constexpr int64_t max_additional_messages = 4;
+
+  bool need_new_message() {
+    return additional_messages > max_additional_messages;
+  }
+
+  void set_need_new_message() {
+    additional_messages = max_additional_messages;
   }
 };
 

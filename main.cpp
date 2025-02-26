@@ -52,7 +52,7 @@ dd::task<void> start_main_task(tgbm::bot& bot, EventBroker& event_broker) {
     event_broker.save();
   }
 }
-int main() {
+int main() try {
   on_scope_exit {
     TGBM_LOG_INFO("Bot stopped.");
   };
@@ -74,4 +74,6 @@ int main() {
   saving_database(bot, event_broker).start_and_detach();
   bot.run();
   return 0;
+} catch (std::exception& exc) {
+  TGBM_LOG_CRIT("Start bot failed. Reason : {}", exc.what());
 }

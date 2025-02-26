@@ -6,6 +6,8 @@ CPMAddPackage(
   GIT_TAG        v1.0.8
 )
 
+set(SQLITECPP_RUN_CPPCHECK OFF)
+
 CPMAddPackage(
   NAME SQLiteCpp
   GIT_REPOSITORY https://github.com/SRombauts/SQLiteCpp

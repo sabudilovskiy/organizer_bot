@@ -1,5 +1,7 @@
 #include "time.hpp"
 
+#include <tgbm/utils/macro.hpp>
+
 namespace bot {
 
 ts_t now() {
@@ -21,4 +23,23 @@ ts_t parse_ts(const std::string& str) {
   return ts_t(std::chrono::seconds(time));
 }
 
+std::string_view to_string(weekday w) noexcept {
+  switch (w.iso_encoding()) {
+    case 0:
+      return "воскресенье";
+    case 1:
+      return "понедельник";
+    case 2:
+      return "вторник";
+    case 3:
+      return "среда";
+    case 4:
+      return "четверг";
+    case 5:
+      return "пятница";
+    case 6:
+      return "суббота";
+  }
+  tgbm::unreachable();
+}
 }  // namespace bot

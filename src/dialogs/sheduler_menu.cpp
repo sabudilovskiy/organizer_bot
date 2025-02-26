@@ -11,7 +11,7 @@ consumer_t sheduler_menu(ContextWithUser ctx) {
       .add("📜 Список задач ",        ShedulerMenu::list)
       .add("🔄 Повторяющиеся задачи", ShedulerMenu::repeatable)
       .add("🔔 Напоминания",          ShedulerMenu::reminders)
-      .add("🏠 Главное меню",         ShedulerMenu::main_menu);
+      .add("🏠 Главное меню",         ShedulerMenu::to_main_menu);
   // clang-format on
   $await_all(menu.show(ctx, choosed));
   switch (choosed) {
@@ -20,7 +20,7 @@ consumer_t sheduler_menu(ContextWithUser ctx) {
     case ShedulerMenu::repeatable:
     case ShedulerMenu::reminders:
       $await_all(ctx.send_text("Пока что не реализовано 😔"));
-    case ShedulerMenu::main_menu:
+    case ShedulerMenu::to_main_menu:
       co_return;
   }
 }

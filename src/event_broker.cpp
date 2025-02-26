@@ -45,42 +45,11 @@ EventBroker::EventBroker(const tgbm::api::telegram& api, Database& db) noexcept 
 }
 
 dd::task<void> EventBroker::process_update(tgbm::api::Update update) {
-  auto _event = co_await generate_event(std::move(update), db_, api_);
-  if (!_event) {
+  auto event = co_await generate_event(std::move(update), db_, api_);
+  if (!event) {
     co_return;
   }
-  auto event = std::move(*_event);
-  TGBM_LOG_EVENT("Generated: {}", event);
-
-  auto& user_events = events_[event.user_id];
-  event.event_id = db_.addEvent(event);
-  user_events.emplace_back(std::move(event));
-  auto& user_consumer = consumers_[event.user_id];
-  if (user_consumer.empty() || events::should_main_menu(user_events)) {
-    auto user = db_.fetchUser(RequestUser{.user_id = event.user_id});
-    user.set_need_new_message();
-
-    user_consumer = main_menu(
-        Context{
-            .db = db_,
-            .api = api_,
-            .events = user_events,
-            .user_id = event.user_id,
-        },
-        std::move(user));
-  }
-  (void)co_await user_consumer.begin();
-
-  if (user_consumer.empty()) {
-    user_consumer = main_menu(Context{
-        .db = db_,
-        .api = api_,
-        .events = user_events,
-        .user_id = event.user_id,
-    });
-  }
-
-  (void)co_await user_consumer.begin();
+  co_await process_event(std::move(*event));
 }
 
 void EventBroker::load() {
@@ -125,4 +94,50 @@ dd::task<void> EventBroker::safe_process_update(tgbm::api::Update update) noexce
     TGBM_LOG_ERROR("Fail processing update {}. Happens: {}", update_id, exc.what());
   }
 }
+
+void EventBroker::add_deferred_event(Event event) {
+  deferred_events_.emplace_back(std::move(event));
+}
+
+dd::task<void> EventBroker::process_event(Event event) {
+  TGBM_LOG_EVENT("Processed: {}", event);
+
+  auto& user_events = events_[event.user_id];
+  event.event_id = db_.addEvent(event);
+  user_events.emplace_back(std::move(event));
+  auto& user_consumer = consumers_[event.user_id];
+  if (user_consumer.empty() || events::should_main_menu(user_events)) {
+    auto user = db_.fetchUser(RequestUser{.user_id = event.user_id});
+
+    user_consumer = main_menu(
+        Context{
+            .db = db_,
+            .api = api_,
+            .event_broker = *this,
+            .events = user_events,
+            .user_id = event.user_id,
+        },
+        std::move(user));
+  }
+  (void)co_await user_consumer.begin();
+
+  if (user_consumer.empty()) {
+    user_consumer = main_menu(Context{
+        .db = db_,
+        .api = api_,
+        .event_broker = *this,
+        .events = user_events,
+        .user_id = event.user_id,
+    });
+  }
+
+  (void)co_await user_consumer.begin();
+}
+
+dd::task<void> EventBroker::process_defferred_events() {
+  for (auto& e : deferred_events_) {
+    co_await process_event(std::move(e));
+  }
+}
+
 }  // namespace bot

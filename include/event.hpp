@@ -45,8 +45,10 @@ struct Event {
   std::int64_t event_id;
   std::int64_t user_id;
   ts_t ts;
-  bool consumed = false;
   EventMeta meta;
+  bool consumed = false;
+
+  static constexpr std::string_view db_name = "events";
 
   CBQueryMeta& cb_query_meta();
   const CBQueryMeta& cb_query_meta() const;

@@ -1,16 +1,34 @@
 #pragma once
 
+#include <anyany/noexport/common.hpp>
 #include <vector>
 #include <tgbm/api/optional.hpp>
 #include <SQLiteCpp/SQLiteCpp.h>
-#include <optional>
 
 #include "event.hpp"
+#include "sql/native_type.hpp"
 #include "types.hpp"
 
 namespace bot {
 
+struct PragmaInfo {
+  std::int64_t cid;
+  std::string name;
+  sql::native_type type;
+  bool notnull;
+  tgbm::api::optional<std::string> dflt_value;
+  bool pk;
+};
+
+struct Migration {
+  std::int64_t id;
+  ts_t applied_at;
+  std::string migration_sql;
+};
+
 struct Database {
+  using Tables = aa::type_list<Event, Task, User>;
+
   Database(const std::string& dbPath);
 
   User fetchUser(const RequestUser& user);
@@ -25,6 +43,10 @@ struct Database {
                   const std::string& description, bool status);
 
   void consumeEvents(const std::vector<int64_t>& event_ids);
+
+  std::vector<PragmaInfo> get_info(const std::string& table);
+
+  std::vector<Migration> get_migrations();
 
   // returns: event_id
   // ignore event_id from
@@ -43,7 +65,7 @@ struct Database {
  private:
   std::unique_ptr<SQLite::Database> db;
 
-  void createTables();
+  void start();
 };
 
 }  // namespace bot

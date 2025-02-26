@@ -19,9 +19,20 @@ enum struct ShedulerMenu {
   list,
   repeatable,
   reminders,
-  main_menu,
+  to_main_menu,
 };
 
 consumer_t sheduler_menu(ContextWithUser ctx);
+
+enum struct CallMenu {
+  list,
+  add,
+  settings,
+  export_calendar,
+  mute,
+  to_main_menu,
+};
+
+consumer_t call_menu(ContextWithUser ctx);
 
 }  // namespace bot

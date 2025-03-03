@@ -3,6 +3,9 @@
 #include <boost/pfr.hpp>
 
 #include "sql/parser_column.hpp"
+#include "utils.hpp"
+
+#include <tgbm_replace/logger.hpp>
 
 namespace bot::sql {
 template <typename T>
@@ -20,10 +23,18 @@ template <typename T>
 struct parser_row<T> {
   static T parse(SQLite::Statement& statement) {
     T out;
-    auto v = [&]<typename Field>(Field& field, std::size_t i) {
-      field = parser_column<Field>::parse(statement, i);
+    auto v = [&]<typename Info, typename Field>(Field& field) {
+      TGBM_ON_DEBUG({
+        std::string_view got_name = statement.getColumnName(Info::index);
+        std::string_view expected_name = Info::name.AsStringView();
+        if (got_name != expected_name) {
+          throw_formatted("[T = {}] Missmatch field name `{}` and column name `{}` detected", name_type<T>,
+                          got_name, expected_name);
+        }
+      });
+      field = parser_column<Field>::parse(statement, Info::index);
     };
-    boost::pfr::for_each_field(out, v);
+    pfr_extension::visit_object(out, v);
     return out;
   }
 };

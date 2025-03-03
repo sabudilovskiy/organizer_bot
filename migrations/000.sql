@@ -22,3 +22,11 @@ CREATE TABLE events (
     meta     TEXT                                 NOT NULL,
     consumed INTEGER                              NOT NULL
 );
+
+CREATE TABLE calls (
+    call_id     INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    user_id     INTEGER                           NOT NULL,
+    name        TEXT                              NOT NULL,
+    description TEXT                              NOT NULL,
+    schedule    TEXT                              NOT NULL
+);

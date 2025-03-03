@@ -50,6 +50,17 @@ struct parser_column<EventMeta> {
 };
 
 template <typename T>
+  requires std::is_aggregate_v<T>
+struct parser_column<T> {
+  static constexpr auto nt = native_type::TEXT;
+  static constexpr auto is_null = false;
+
+  static T parse(SQLite::Statement& statement, std::size_t index) {
+    return from_json_str<T>(parser_column<std::string>::parse(statement, index));
+  }
+};
+
+template <typename T>
   requires magic_enum::is_scoped_enum_v<T>
 struct parser_column<T> {
   static constexpr auto nt = native_type::TEXT;
@@ -83,6 +94,18 @@ struct parser_column<tgbm::api::optional<T>> {
       return std::nullopt;
     }
     return parser_column<T>::parse(statement, index);
+  }
+};
+
+template <typename T>
+struct parser_column<std::vector<T>> {
+  static constexpr auto nt = native_type::TEXT;
+  static constexpr auto is_null = false;
+  static tgbm::api::optional<T> parse(SQLite::Statement& statement, std::size_t index) {
+    if (statement.getColumnCount() <= index) {
+      throw std::runtime_error("too big index");
+    }
+    return from_json_str<T>(parser_column<std::string>::parse(statement, index));
   }
 };
 

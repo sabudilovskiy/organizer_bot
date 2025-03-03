@@ -35,7 +35,7 @@ struct User {
   int64_t gmt_offset_m = 90;
 
   bool need_new_message() {
-    return additional_messages > max_additional_messages;
+    return additional_messages >= max_additional_messages;
   }
 
   void set_need_new_message() {
@@ -46,14 +46,14 @@ struct User {
   static constexpr int64_t max_additional_messages = 1;
 };
 
-struct call {
+struct Call {
   std::int64_t call_id;
+  std::int64_t user_id;
+  std::string name;
   std::string description;
+  schedule_unit schedule;
 
   static constexpr std::string_view db_name = "calls";
-
-  std::vector<shedule_unit> shedules;
-  ts_t next_occurrence;
 };
 
 }  // namespace bot

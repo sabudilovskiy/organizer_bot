@@ -26,6 +26,12 @@ dd::task<tgbm::api::optional<Event>> generate_event(tgbm::api::Update u, Databas
         .meta = std::move(meta),
     };
   } else if (auto* query = u.get_callback_query(); query && query->from && query->data) {
+    (void)co_await api
+        .answerCallbackQuery({
+            .callback_query_id = query->id,
+            .cache_time = 3,
+        })
+        .wait();
     co_return Event{
         .user_id = query->from->id,
         .ts = now(),
@@ -100,14 +106,14 @@ void EventBroker::add_deferred_event(Event event) {
 }
 
 dd::task<void> EventBroker::process_event(Event event) {
-  TGBM_LOG_EVENT("Processed: {}", event);
+  TGBM_LOG_DEBUG("Processed: {}", event);
 
   auto& user_events = events_[event.user_id];
   event.event_id = db_.addEvent(event);
   user_events.emplace_back(std::move(event));
   auto& user_consumer = consumers_[event.user_id];
-  if (user_consumer.empty() || events::should_main_menu(user_events)) {
-    auto user = db_.fetchUser(RequestUser{.user_id = event.user_id});
+  if (events::should_main_menu(user_events) || user_consumer.empty()) {
+    auto user = db_.fetchUser({.user_id = event.user_id});
 
     user_consumer = main_menu(
         Context{

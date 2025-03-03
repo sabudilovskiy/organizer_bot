@@ -5,19 +5,17 @@
 #include <kelcoro/task.hpp>
 #include <tgbm/api/telegram.hpp>
 
+#include "consumer.hpp"
 #include "database.hpp"
 #include "types.hpp"
 
 namespace bot {
-
-using consumer_t = dd::channel<dd::nothing_t>;
 
 struct EventBroker {
   EventBroker(const tgbm::api::telegram& api, Database& db) noexcept;
 
   void add_deferred_event(Event event);
 
-  // log and ignore or exceptions
   dd::task<void> safe_process_update(tgbm::api::Update update) noexcept;
 
   dd::task<void> process_update(tgbm::api::Update update);

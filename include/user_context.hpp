@@ -1,16 +1,14 @@
 #pragma once
 
-#include <kelcoro/generator.hpp>
-#include <kelcoro/channel.hpp>
 #include <vector>
+
+#include "consumer.hpp"
 
 namespace tgbm::api {
 struct telegram;
 }
 
 namespace bot {
-
-using consumer_t = dd::channel<dd::nothing_t>;
 
 struct Database;
 struct Event;
@@ -43,9 +41,12 @@ struct ContextWithUser {
         user(user) {
   }
 
-  consumer_t send_text(std::string text);
-  consumer_t delete_message(int64_t id);
+  [[nodiscard]] action_t send_text(std::string text);
+  [[nodiscard]] consumer_t read_text(std::string text, std::string& out);
+  [[nodiscard]] consumer_t delete_message(int64_t id);
+
   void to_main_menu();
+  void set_need_new_message();
 };
 
 }  // namespace bot

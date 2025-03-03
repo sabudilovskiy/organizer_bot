@@ -25,11 +25,12 @@ std::string_view type_column(const SQLite::Column& column) {
   return "unknown";
 }
 
-#define LOG_ERROR_TYPE(EXPECTED_TYPE)                                                                       \
-  TGBM_LOG_CRIT(                                                                                            \
-      "Error while executing query: [{}]. Missmatch types on column with index {} and name {}, got: [{}], " \
-      "expected: "                                                                                          \
-      "[{}]",                                                                                               \
+#define LOG_ERROR_TYPE(EXPECTED_TYPE)                                                                   \
+  TGBM_LOG_CRIT(                                                                                        \
+      "Error while executing query: [{}]. Missmatch types on column with index {} and name `{}`, got: " \
+      "[{}], "                                                                                          \
+      "expected: "                                                                                      \
+      "[{}]",                                                                                           \
       statement.getQuery(), index, col.getName(), type_column(col), #EXPECTED_TYPE);
 
 bool parser_column<bool>::parse(SQLite::Statement& statement, std::size_t index) {

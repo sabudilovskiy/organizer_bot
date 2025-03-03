@@ -78,10 +78,26 @@ struct binder<T> {
   }
 };
 
+template <typename T>
+struct json_binder {
+  static void bind(SQLite::Statement& statement, const T& t, std::size_t& cur_index) {
+    statement.bind(cur_index++, to_json_str(t));
+  }
+};
+
 template <>
-struct binder<EventMeta> {
-  static void bind(SQLite::Statement& statement, const EventMeta& meta, std::size_t& cur_index) {
-    statement.bind(cur_index++, to_json_str(meta));
+struct binder<EventMeta> : json_binder<EventMeta> {};
+
+template <>
+struct binder<time_of_day> : json_binder<time_of_day> {};
+
+template <>
+struct binder<schedule_unit> : json_binder<schedule_unit> {};
+
+template <>
+struct binder<std::chrono::weekday> {
+  static void bind(SQLite::Statement& statement, const std::chrono::weekday& w, std::size_t& cur_index) {
+    statement.bind(cur_index++, std::string(to_string(w)));
   }
 };
 }  // namespace bot::sql

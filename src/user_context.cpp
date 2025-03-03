@@ -5,10 +5,13 @@
 
 #include "database.hpp"
 #include "event_broker.hpp"
+#include "event_utils.hpp"
+#include "macro.hpp"
 #include "types.hpp"
 
 namespace bot {
-consumer_t ContextWithUser::send_text(std::string text) {
+
+action_t ContextWithUser::send_text(std::string text) {
   (void)co_await api.sendMessage({
       .chat_id = user.chat_id,
       .text = std::move(text),
@@ -30,5 +33,23 @@ void ContextWithUser::to_main_menu() {
       .ts = now(),
       .meta = CommandMeta{"start"},
   });
+}
+
+consumer_t ContextWithUser::read_text(std::string text, std::string& out) {
+  co_await send_text(std::move(text));
+
+  for (;;) {
+    for (auto& e : this->events | events::only_messages | events::take(1)) {
+      out = e.message_meta().text;
+      e.consumed = true;
+      co_return;
+    }
+    co_yield {};
+  }
+}
+
+void ContextWithUser::set_need_new_message() {
+  user.set_need_new_message();
+  db.updateUser(user);
 }
 }  // namespace bot

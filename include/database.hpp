@@ -62,6 +62,12 @@ struct Database {
 
   std::vector<Task> searchTasks(std::int64_t user_id, const std::string& keyword);
 
+  // returns: call_id
+  // ignore call_id from
+  std::int64_t addCall(const Call& call);
+
+  std::vector<Call> getCalls(std::int64_t user_id);
+
  private:
   std::unique_ptr<SQLite::Database> db;
 

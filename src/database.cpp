@@ -37,13 +37,11 @@ const std::string q_get_user =
 const std::string q_update_user =
     "UPDATE users SET message_id = ?, additional_messages = ?, gmt_offset_m = ? WHERE user_id = ?";
 
-const std::string q_get_events = "SELECT ts, user_id, meta FROM events";
-
 const std::string q_add_event =
     "INSERT INTO events (ts, user_id, meta, consumed) VALUES (?, ?, ?, 0) RETURNING event_id";
 
 const std::string q_select_events =
-    "SELECT event_id, user_id, ts, consumed, meta FROM events where consumed = 0 ORDER BY ts ASC, "
+    "SELECT event_id, user_id, ts, meta, consumed FROM events where consumed = 0 ORDER BY ts ASC, "
     "user_id ASC";
 
 const std::string q_create_migrations_table =
@@ -56,6 +54,12 @@ const std::string q_create_migrations_table =
 const std::string q_get_migration_count = "SELECT id, applied_at, migration_sql FROM migrations";
 
 const std::string q_insert_migration = "INSERT INTO migrations (applied_at, migration_sql) VALUES (?, ?)";
+
+const std::string q_insert_call =
+    "INSERT INTO calls (user_id, name, description, schedule) VALUES (?,?,?,?) RETURNING call_id";
+
+const std::string q_get_calls =
+    "SELECT call_id, user_id, name, description, schedule FROM calls WHERE user_id = ?";
 
 constexpr char q_get_table_info[] = "PRAGMA table_info({});";
 
@@ -244,5 +248,14 @@ std::vector<PragmaInfo> Database::get_info(const std::string& table) {
 
 std::vector<Migration> Database::get_migrations() {
   return sql::execute<std::vector<Migration>>(db, q_get_migration_count);
+}
+
+std::int64_t Database::addCall(const Call& call) {
+  return sql::execute<std::int64_t>(db, q_insert_call, call.user_id, call.name, call.description,
+                                    call.schedule);
+}
+
+std::vector<Call> Database::getCalls(std::int64_t user_id) {
+  return sql::execute<std::vector<Call>>(db, q_get_calls, user_id);
 }
 }  // namespace bot

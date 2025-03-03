@@ -60,4 +60,12 @@ struct json_writer<T> {
     });
   }
 };
+
+template <>
+struct json_writer<weekday> {
+  static void write(boost::json::value& v, const weekday& w) {
+    v = to_string(w);
+  }
+};
+
 }  // namespace bot

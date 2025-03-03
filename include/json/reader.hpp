@@ -76,4 +76,13 @@ struct json_reader<tgbm::api::optional<T>> {
     return json_reader<T>::read(v);
   }
 };
+
+template <>
+struct json_reader<weekday> {
+  static weekday read(const boost::json::value& v) {
+    auto str = json_reader<std::string>::read(v);
+    return parse_weekday(str);
+  }
+};
+
 }  // namespace bot

@@ -3,25 +3,37 @@
 #include "menu.hpp"
 
 namespace bot {
-consumer_t sheduler_menu(ContextWithUser ctx) {
-  ShedulerMenu choosed;
-  auto menu = Menu<ShedulerMenu>{"📌 Здесь вы можете управлять своими задачами и напоминаниями"};
-  // clang-format off
-  menu.add("➕ Добавить задачу",      ShedulerMenu::add)
-      .add("📜 Список задач ",        ShedulerMenu::list)
-      .add("🔄 Повторяющиеся задачи", ShedulerMenu::repeatable)
-      .add("🔔 Напоминания",          ShedulerMenu::reminders)
-      .add("🏠 Главное меню",         ShedulerMenu::to_main_menu);
-  // clang-format on
-  $await_all(menu.show(ctx, choosed));
-  switch (choosed) {
-    case ShedulerMenu::add:
-    case ShedulerMenu::list:
-    case ShedulerMenu::repeatable:
-    case ShedulerMenu::reminders:
-      $await_all(ctx.send_text("Пока что не реализовано 😔"));
-    case ShedulerMenu::to_main_menu:
-      co_return;
+
+enum struct schedulerMenu {
+  add,
+  list,
+  repeatable,
+  reminders,
+  to_main_menu,
+};
+
+consumer_t scheduler_menu(ContextWithUser ctx) {
+  for (;;) {
+    schedulerMenu choosed;
+    auto menu = Menu<schedulerMenu>{"📌 Здесь вы можете управлять своими задачами и напоминаниями", ID()};
+    // clang-format off
+  menu.add("➕ Добавить задачу",      schedulerMenu::add)
+      .add("📜 Список задач ",        schedulerMenu::list)
+      .add("🔄 Повторяющиеся задачи", schedulerMenu::repeatable)
+      .add("🔔 Напоминания",          schedulerMenu::reminders)
+      .add("🏠 Главное меню",         schedulerMenu::to_main_menu);
+    // clang-format on
+    AWAIT_ALL(menu.show(ctx, choosed));
+    switch (choosed) {
+      case schedulerMenu::add:
+      case schedulerMenu::list:
+      case schedulerMenu::repeatable:
+      case schedulerMenu::reminders:
+        co_await ctx.send_text("Пока что не реализовано 😔");
+        break;
+      case schedulerMenu::to_main_menu:
+        co_return;
+    }
   }
 }
 }  // namespace bot

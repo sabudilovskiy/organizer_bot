@@ -4,8 +4,8 @@
 #include <tgbm/logger.hpp>
 
 #include "errors.hpp"
-#include "event_broker.hpp"
-#include "event_utils.hpp"
+#include "io_event_broker.hpp"
+#include "io_event_utils.hpp"
 #include "formatters/all.hpp"
 #include "types.hpp"
 #include "user_context.hpp"
@@ -91,7 +91,7 @@ template <typename T>
     for (auto& e : ctx.events | events::only_cb_queries) {
       e.consumed = true;
       auto& data = e.cb_query_meta().data;
-      auto res_scan = scn::scan<std::int64_t, std::int64_t, std::string>(data, "{};{};{}");
+      auto res_scan = scn::scan<std::int64_t, std::size_t, std::string>(data, "{};{};{}");
       if (!res_scan) {
         TGBM_LOG_ERROR("Got cb query in unknown format. Data: [{}]", data);
         continue;

@@ -4,8 +4,8 @@
 #include <tgbm/api/types/all.hpp>
 
 #include "database.hpp"
-#include "event_broker.hpp"
-#include "event_utils.hpp"
+#include "io_event_broker.hpp"
+#include "io_event_utils.hpp"
 #include "macro.hpp"
 #include "types.hpp"
 
@@ -31,7 +31,7 @@ void ContextWithUser::to_main_menu() {
   event_broker.add_deferred_event({
       .user_id = user_id,
       .ts = now(),
-      .meta = CommandMeta{"start"},
+      .meta = command_meta_t{"start"},
   });
 }
 

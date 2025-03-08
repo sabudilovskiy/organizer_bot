@@ -37,11 +37,11 @@ const std::string q_get_user =
 const std::string q_update_user =
     "UPDATE users SET message_id = ?, additional_messages = ?, gmt_offset_m = ? WHERE user_id = ?";
 
-const std::string q_add_event =
-    "INSERT INTO events (ts, user_id, meta, consumed) VALUES (?, ?, ?, 0) RETURNING event_id";
+const std::string q_add_io_event =
+    "INSERT INTO io_events (ts, user_id, meta, consumed) VALUES (?, ?, ?, 0) RETURNING io_event_id";
 
-const std::string q_select_events =
-    "SELECT event_id, user_id, ts, meta, consumed FROM events where consumed = 0 ORDER BY ts ASC, "
+const std::string q_select_io_events =
+    "SELECT io_event_id, user_id, ts, meta, consumed FROM io_events where consumed = 0 ORDER BY ts ASC, "
     "user_id ASC";
 
 const std::string q_create_migrations_table =
@@ -216,12 +216,12 @@ tgbm::api::optional<Task> Database::find_task(std::int64_t user_id, std::int64_t
   return sql::execute<tgbm::api::optional<Task>>(db, q_find_task_by_id, user_id, task_id);
 }
 
-std::vector<Event> Database::getEvents() {
-  return sql::execute<std::vector<Event>>(db, q_select_events);
+std::vector<io_event> Database::getEvents() {
+  return sql::execute<std::vector<io_event>>(db, q_select_io_events);
 }
 
-std::int64_t Database::addEvent(const Event& e) {
-  return sql::execute<int64_t>(db, q_add_event, e.ts, e.user_id, e.meta);
+std::int64_t Database::addEvent(const io_event& e) {
+  return sql::execute<int64_t>(db, q_add_io_event, e.ts, e.user_id, e.meta);
 }
 
 void Database::consumeEvents(const std::vector<int64_t>& event_ids) {

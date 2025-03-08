@@ -97,7 +97,7 @@ ts_t parser_column<ts_t>::parse(SQLite::Statement& statement, std::size_t index)
   return parse_ts(col.getString());
 }
 
-EventMeta parser_column<EventMeta>::parse(SQLite::Statement& statement, std::size_t index) {
+io_event_meta parser_column<io_event_meta>::parse(SQLite::Statement& statement, std::size_t index) {
   if (statement.getColumnCount() <= index) {
     throw std::runtime_error("too big index");
   }
@@ -106,7 +106,7 @@ EventMeta parser_column<EventMeta>::parse(SQLite::Statement& statement, std::siz
     LOG_ERROR_TYPE(Text);
     throw std::runtime_error("Unexpected type");
   }
-  return from_json_str<EventMeta>(col.getString());
+  return from_json_str<io_event_meta>(col.getString());
 }
 
 }  // namespace bot::sql

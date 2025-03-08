@@ -2,7 +2,7 @@
 
 #include <SQLiteCpp/Statement.h>
 
-#include "event.hpp"
+#include "io_event.hpp"
 #include "json/value.hpp"
 #include "sql/native_type.hpp"
 
@@ -43,10 +43,10 @@ struct parser_column<std::string> {
 };
 
 template <>
-struct parser_column<EventMeta> {
+struct parser_column<io_event_meta> {
   static constexpr auto nt = native_type::TEXT;
   static constexpr auto is_null = false;
-  static EventMeta parse(SQLite::Statement& statement, std::size_t index);
+  static io_event_meta parse(SQLite::Statement& statement, std::size_t index);
 };
 
 template <typename T>

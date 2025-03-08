@@ -5,7 +5,7 @@
 #include <tgbm/api/optional.hpp>
 #include <SQLiteCpp/SQLiteCpp.h>
 
-#include "event.hpp"
+#include "io_event.hpp"
 #include "sql/native_type.hpp"
 #include "types.hpp"
 
@@ -27,7 +27,7 @@ struct Migration {
 };
 
 struct Database {
-  using Tables = aa::type_list<Event, Task, User>;
+  using Tables = aa::type_list<io_event, Task, User>;
 
   Database(const std::string& dbPath);
 
@@ -50,9 +50,9 @@ struct Database {
 
   // returns: event_id
   // ignore event_id from
-  std::int64_t addEvent(const Event& event);
+  std::int64_t addEvent(const io_event& event);
 
-  std::vector<Event> getEvents();
+  std::vector<io_event> getEvents();
 
   tgbm::api::optional<Task> find_task(std::int64_t user_id, std::int64_t task_id);
 

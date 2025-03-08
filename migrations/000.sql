@@ -15,8 +15,8 @@ CREATE TABLE tasks (
     created_at  TEXT                               NOT NULL
 );
 
-CREATE TABLE events (
-    event_id INTEGER PRIMARY KEY AUTOINCREMENT    NOT NULL,
+CREATE TABLE io_events (
+    io_event_id INTEGER PRIMARY KEY AUTOINCREMENT    NOT NULL,
     user_id  INTEGER                              NOT NULL,
     ts       TEXT                                 NOT NULL,
     meta     TEXT                                 NOT NULL,

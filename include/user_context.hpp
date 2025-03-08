@@ -11,24 +11,24 @@ struct telegram;
 namespace bot {
 
 struct Database;
-struct Event;
+struct io_event;
 struct User;
-struct EventBroker;
+struct io_event_broker;
 
 struct Context {
   Database& db;
   const tgbm::api::telegram& api;
-  EventBroker& event_broker;
-  std::vector<Event>& events;
+  io_event_broker& event_broker;
+  std::vector<io_event>& events;
   std::int64_t user_id;
 };
 
 struct ContextWithUser {
   Database& db;
   const tgbm::api::telegram& api;
-  EventBroker& event_broker;
+  io_event_broker& event_broker;
 
-  std::vector<Event>& events;
+  std::vector<io_event>& events;
   std::int64_t user_id;
   User& user;
 

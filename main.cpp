@@ -9,7 +9,7 @@
 #include <tgbm/net/errors.hpp>
 
 #include "database.hpp"
-#include "event_broker.hpp"
+#include "io_event_broker.hpp"
 #include "tgbm/logger.hpp"
 
 using namespace bot;
@@ -22,7 +22,7 @@ void stop_handler(int signal) {
 
 tgbm::long_poll_options lp_options{.timeout = std::chrono::seconds(3)};
 
-dd::task<void> saving_database(tgbm::bot& bot, EventBroker& event_broker) {
+dd::task<void> saving_database(tgbm::bot& bot, io_event_broker& event_broker) {
   tgbm::io_error_code errc;
   while (!errc) {
     co_await bot.sleep(std::chrono::seconds(3), errc);
@@ -36,11 +36,11 @@ dd::task<void> saving_database(tgbm::bot& bot, EventBroker& event_broker) {
   }
 }
 
-dd::task<void> start_main_task(tgbm::bot& bot, EventBroker& event_broker) {
+dd::task<void> main_task(tgbm::bot& bot, io_event_broker& event_broker) {
   on_scope_exit {
-    // stop bot on failure
     bot.stop();
     event_broker.save();
+    TGBM_LOG_INFO("End main task");
   };
 
   auto me = co_await bot.api.getMe();
@@ -68,9 +68,9 @@ int main() try {
   token_file >> token;
   tgbm::bot bot{token /*"api.telegram.org", "some_ssl_certificate"*/};
   Database db("bot.db");
-  EventBroker event_broker(bot.api, db);
+  io_event_broker event_broker(bot.api, db);
   event_broker.load();
-  start_main_task(bot, event_broker).start_and_detach();
+  main_task(bot, event_broker).start_and_detach();
   saving_database(bot, event_broker).start_and_detach();
   bot.run();
   return 0;

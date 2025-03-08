@@ -3,7 +3,7 @@
 #include <SQLiteCpp/Statement.h>
 #include <tgbm/api/optional.hpp>
 
-#include "event.hpp"
+#include "io_event.hpp"
 #include "json/value.hpp"
 #include "time.hpp"
 
@@ -86,7 +86,7 @@ struct json_binder {
 };
 
 template <>
-struct binder<EventMeta> : json_binder<EventMeta> {};
+struct binder<io_event_meta> : json_binder<io_event_meta> {};
 
 template <>
 struct binder<time_of_day> : json_binder<time_of_day> {};

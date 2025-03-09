@@ -6,6 +6,7 @@
 #include <tgbm/api/optional.hpp>
 #include <SQLiteCpp/Statement.h>
 #include <SQLiteCpp/Database.h>
+#include <ranges>
 
 #include "sql/binder.hpp"
 #include "sql/parser.hpp"
@@ -28,14 +29,9 @@ Res execute_unsafe(std::unique_ptr<SQLite::Database>& db, fmt::format_string<Arg
   return parser<Res>::parse(statement);
 }
 
-// does not add a comma at the beginning and end query
-inline void add_n_arg(std::string& query, std::size_t N) {
-  query.reserve(query.size() + N * 2 + 1);
-  if (N > 0)
-    query.append("?");
-  for (std::size_t i = 1; i < N; i++) {
-    query.append(",?");
-  }
+inline auto n_placeholders(std::size_t N) {
+  return fmt::join(std::views::iota(std::size_t(0), N) | std::views::transform([](auto) { return "?"; }),
+                   ",");
 }
 
 }  // namespace bot::sql

@@ -5,6 +5,7 @@
 #include <tgbm/utils/pfr_extension.hpp>
 
 #include "time.hpp"
+#include "utils.hpp"
 
 namespace bot {
 template <typename T>
@@ -58,10 +59,7 @@ struct json_reader<T> {
     pfr_extension::visit_object(res, [&]<typename Info, typename F>(F& field) {
       std::string_view key = Info::name.AsStringView();
       auto it = obj.find(key);
-      if (it == obj.end()) {
-        throw std::runtime_error("not found");
-      }
-      field = json_reader<F>::read(it->value());
+      field = json_reader<F>::read(it != obj.end() ? it->value() : boost::json::value{});
     });
     return res;
   }

@@ -10,13 +10,13 @@ struct telegram;
 
 namespace bot {
 
-struct Database;
+struct OrganizerDB;
 struct io_event;
 struct User;
 struct io_event_broker;
 
 struct Context {
-  Database& db;
+  OrganizerDB& db;
   const tgbm::api::telegram& api;
   io_event_broker& event_broker;
   std::vector<io_event>& events;
@@ -24,7 +24,7 @@ struct Context {
 };
 
 struct ContextWithUser {
-  Database& db;
+  OrganizerDB& db;
   const tgbm::api::telegram& api;
   io_event_broker& event_broker;
 

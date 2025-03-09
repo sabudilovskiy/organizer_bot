@@ -8,70 +8,71 @@
 #include <tgbm/utils/scope_exit.hpp>
 #include <tgbm/net/errors.hpp>
 
+#include "config.hpp"
 #include "database.hpp"
 #include "io_event_broker.hpp"
+#include "macro.hpp"
+#include "organizer_db.hpp"
+#include "stop_handler.hpp"
 #include "tgbm/logger.hpp"
 
 using namespace bot;
 
-std::atomic_bool need_to_stop{};
-
-void stop_handler(int signal) {
-  need_to_stop.store(true, std::memory_order::relaxed);
-}
-
-tgbm::long_poll_options lp_options{.timeout = std::chrono::seconds(3)};
-
-dd::task<void> saving_database(tgbm::bot& bot, io_event_broker& event_broker) {
+dd::task<void> saving_database(tgbm::bot& bot, io_event_broker& event_broker, const Config& config) {
   tgbm::io_error_code errc;
-  while (!errc) {
-    co_await bot.sleep(std::chrono::seconds(3), errc);
-    if (need_to_stop.load(std::memory_order::relaxed)) {
-      TGBM_LOG_INFO("Try to stop bot...");
-      bot.stop();
+  bool stopping{};
+
+  while (!errc && !stopping) {
+    co_await bot.sleep(std::chrono::seconds(config.interval_save_db), errc);
+
+    try {
       event_broker.save();
-      co_return;
+    } catch (const std::exception& exc) {
+      TGBM_LOG_ERROR("Fail save db: {}", exc.what());
+      stopping |= !config.skip_fail_save_db;
     }
-    event_broker.save();
+
+    stopping |= is_need_stop();
   }
+
+  TGBM_LOG_INFO("Try to stop bot...");
+  try {
+    event_broker.save();
+  } catch (const std::exception& exc) {
+    TGBM_LOG_CRIT("Fail save db before stopping: {}", exc.what());
+  }
+  bot.stop();
 }
 
-dd::task<void> main_task(tgbm::bot& bot, io_event_broker& event_broker) {
+dd::task<void> main_task(tgbm::bot& bot, io_event_broker& event_broker, const Config& config) {
   on_scope_exit {
-    bot.stop();
-    event_broker.save();
-    TGBM_LOG_INFO("End main task");
+    need_stop();
+  };
+  auto options = tgbm::long_poll_options{
+      .drop_pending_updates = config.skip_fail_updates,
+      .timeout = std::chrono::seconds(config.timeout),
   };
 
   auto me = co_await bot.api.getMe();
-  TGBM_LOG_INFO("launching bot, info: {}", me);
+  TGBM_LOG_INFO("Bot launched, info: {}", me);
 
-  co_foreach(auto u, bot.updates(lp_options)) {
-    auto update_id = u.update_id;
-    co_await event_broker.safe_process_update(std::move(u));
-    event_broker.save();
+  co_foreach(auto u, bot.updates()) {
+    co_await event_broker.process_update(std::move(u));
   }
 }
+
 int main() try {
   on_scope_exit {
     TGBM_LOG_INFO("Bot stopped.");
   };
-  std::ifstream token_file("token.txt");
-  if (!token_file.is_open()) {
-    TGBM_LOG_CRIT(
-        "launching telegram bot requires bot token from @BotFather. Create token.txt and place token.");
-    return -1;
-  }
-  std::signal(SIGINT, stop_handler);
-  std::signal(SIGTERM, stop_handler);
-  std::string token;
-  token_file >> token;
-  tgbm::bot bot{token /*"api.telegram.org", "some_ssl_certificate"*/};
-  Database db("bot.db");
+  Config config = read_config_from_fs("config.json");
+
+  tgbm::bot bot{config.token};
+  OrganizerDB db("bot.db");
   io_event_broker event_broker(bot.api, db);
   event_broker.load();
-  main_task(bot, event_broker).start_and_detach();
-  saving_database(bot, event_broker).start_and_detach();
+  main_task(bot, event_broker, config).start_and_detach();
+  saving_database(bot, event_broker, config).start_and_detach();
   bot.run();
   return 0;
 } catch (std::exception& exc) {

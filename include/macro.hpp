@@ -20,3 +20,9 @@ constexpr std::uint64_t constexpr_place_hash(std::string_view file) noexcept {
 #define STRINGIFY(x) STRINGIFY_IMPL(x)
 #define FILE_LINE __FILE__ ":" STRINGIFY(__LINE__)
 #define ID() ::bot::constexpr_place_hash(FILE_LINE)
+
+#ifndef _WIN32
+  #define EXC_WHAT(EXC) exc.what()
+#else
+  #define EXC_WHAT(EXC) "info about exception unavailable on windows"
+#endif

@@ -10,7 +10,7 @@
 namespace bot {
 
 namespace {
-dd::task<tgbm::api::optional<io_event>> generate_event(tgbm::api::Update u, Database& db,
+dd::task<tgbm::api::optional<io_event>> generate_event(tgbm::api::Update u, OrganizerDB& db,
                                                        const tgbm::api::telegram& api) {
   if (auto* msg = u.get_message(); msg && msg->from && msg->chat && msg->chat->type == "private") {
     db.fetchUser(RequestUser{.user_id = msg->from->id, .chat_id = msg->chat->id});
@@ -47,7 +47,8 @@ dd::task<tgbm::api::optional<io_event>> generate_event(tgbm::api::Update u, Data
 }
 }  // namespace
 
-io_event_broker::io_event_broker(const tgbm::api::telegram& api, Database& db) noexcept : api_(api), db_(db) {
+io_event_broker::io_event_broker(const tgbm::api::telegram& api, OrganizerDB& db) noexcept
+    : api_(api), db_(db) {
 }
 
 dd::task<void> io_event_broker::process_update(tgbm::api::Update update) {

@@ -8,6 +8,12 @@
 #include "time.hpp"
 
 namespace bot::sql {
+
+template <typename T>
+struct as_sequence {
+  const T& t;
+};
+
 template <typename T>
 struct binder {};
 
@@ -60,12 +66,22 @@ struct binder<ts_t> {
 
 template <typename T>
   requires std::is_aggregate_v<T>
-struct binder<T> {
-  static void bind(SQLite::Statement& statement, const T& arg, std::size_t& cur_index) {
+struct binder<as_sequence<T>> {
+  static void bind(SQLite::Statement& statement, const as_sequence<T>& arg, std::size_t& cur_index) {
     auto v = [&]<typename Field>(const Field& field, std::size_t i) {
       binder<Field>::bind(statement, field, cur_index);
     };
-    boost::pfr::for_each_field(arg, v);
+    boost::pfr::for_each_field(arg.t, v);
+  }
+};
+
+template <typename T>
+struct binder<as_sequence<std::vector<T>>> {
+  static void bind(SQLite::Statement& statement, const as_sequence<std::vector<T>>& arg,
+                   std::size_t& cur_index) {
+    for (auto& t : arg.t) {
+      binder<T>::bind(statement, t, cur_index);
+    }
   }
 };
 
@@ -79,20 +95,19 @@ struct binder<T> {
 };
 
 template <typename T>
-struct json_binder {
+  requires std::is_aggregate_v<T>
+struct binder<T> {
   static void bind(SQLite::Statement& statement, const T& t, std::size_t& cur_index) {
     statement.bind(cur_index++, to_json_str(t));
   }
 };
 
-template <>
-struct binder<io_event_meta> : json_binder<io_event_meta> {};
-
-template <>
-struct binder<time_of_day> : json_binder<time_of_day> {};
-
-template <>
-struct binder<schedule_unit> : json_binder<schedule_unit> {};
+template <typename... Ts>
+struct binder<std::variant<Ts...>> {
+  static void bind(SQLite::Statement& statement, const std::variant<Ts...>& t, std::size_t& cur_index) {
+    statement.bind(cur_index++, to_json_str(t));
+  }
+};
 
 template <>
 struct binder<std::chrono::weekday> {

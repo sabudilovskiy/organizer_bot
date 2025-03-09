@@ -6,13 +6,13 @@
 #include <tgbm/api/telegram.hpp>
 
 #include "consumer.hpp"
-#include "database.hpp"
+#include "organizer_db.hpp"
 #include "types.hpp"
 
 namespace bot {
 
 struct io_event_broker {
-  io_event_broker(const tgbm::api::telegram& api, Database& db) noexcept;
+  io_event_broker(const tgbm::api::telegram& api, OrganizerDB& db) noexcept;
 
   void add_deferred_event(io_event event);
 
@@ -31,7 +31,7 @@ struct io_event_broker {
   void save();
 
  private:
-  Database& db_;
+  OrganizerDB& db_;
   const tgbm::api::telegram& api_;
   std::map<std::int64_t, std::vector<io_event>> events_;
   std::unordered_map<std::int64_t, consumer_t> consumers_;

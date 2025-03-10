@@ -28,7 +28,7 @@ struct parser_row<T> {
         std::string_view got_name = statement.getColumnName(Info::index);
         std::string_view expected_name = Info::name.AsStringView();
         if (got_name != expected_name) {
-          throw_formatted("[T = {}] Missmatch field name `{}` and column name `{}` detected", name_type<T>,
+          throw_formatted("[T = {}] Missmatch field name `{}` and column name `{}` detected", name_type_v<T>,
                           got_name, expected_name);
         }
       });

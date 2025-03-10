@@ -93,7 +93,7 @@ consumer_t call_add_menu(ContextWithUser ctx) {
 
   for (;;) {
     schedule_unit su;
-    AWAIT_ALL(weekday_input(ctx, su.weekday));
+    AWAIT_ALL(weekday_input(ctx, su.wd));
     AWAIT_ALL(time_of_day_input(ctx, su.time));
     AWAIT_ALL(schedule_frequence_input(ctx, su.frequence));
     AWAIT_ALL(start_date(ctx, su.start_date));

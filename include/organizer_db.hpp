@@ -5,14 +5,15 @@
 #include <tgbm/api/optional.hpp>
 #include <SQLiteCpp/SQLiteCpp.h>
 
+#include "database.hpp"
 #include "io_event.hpp"
 #include "sql/native_type.hpp"
+#include "time_event.hpp"
 #include "types.hpp"
-#include "database.hpp"
 
 namespace bot {
 
-struct OrganizerDB : Database<io_event, Task, User> {
+struct OrganizerDB : Database<io_event, time_event, Task, User> {
   OrganizerDB(const std::string& dbPath);
 
   User fetchUser(const RequestUser& user);
@@ -47,6 +48,12 @@ struct OrganizerDB : Database<io_event, Task, User> {
   std::int64_t addCall(const Call& call);
 
   std::vector<Call> getCalls(std::int64_t user_id);
+
+  std::int64_t addTimeEvent(const time_event& event);
+
+  void consumeTimeEvents(const std::vector<int64_t>& event_ids);
+
+  std::vector<time_event> getTimeEvents(ts_t max_time);
 };
 
 }  // namespace bot

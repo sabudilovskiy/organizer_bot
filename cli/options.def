@@ -1,0 +1,4 @@
+TAG(print_config, "Print the parameters used from the config (including those substituted from standard values).")
+STRING(config_path, "Path to bot config", default("config.json"))
+
+ALIAS(h, help)

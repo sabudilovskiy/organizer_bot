@@ -47,7 +47,7 @@ Menu<T>& Menu<T>::add(std::string text, T t) {
 
 template <typename T>
 [[nodiscard]] consumer_t Menu<T>::show(ContextWithUser ctx, T& out) & {
-  TGBM_LOG_DEBUG("Create Menu<{}> with id {}", name_of_type<T>(), id_);
+  TGBM_LOG_DEBUG("Create Menu<{}> with id {}", name_type_v<T>, id_);
   auto& user = ctx.user;
   auto& title = title_;
   auto& items = items_;

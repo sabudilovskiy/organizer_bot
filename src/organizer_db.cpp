@@ -44,13 +44,28 @@ const std::string q_select_io_events =
     "SELECT io_event_id, user_id, ts, meta, consumed FROM io_events where consumed = 0 ORDER BY ts ASC, "
     "user_id ASC";
 
-constexpr char q_consume_io_events[] = "UPDATE io_events SET consumed = true WHERE io_event_id IN ({})";
+constexpr char q_consume_io_events[] = "UPDATE io_events SET consumed = 1 WHERE io_event_id IN ({})";
 
 const std::string q_insert_call =
     "INSERT INTO calls (user_id, name, description, schedule) VALUES (?,?,?,?) RETURNING call_id";
 
 const std::string q_get_calls =
     "SELECT call_id, user_id, name, description, schedule FROM calls WHERE user_id = ?";
+
+const std::string q_get_time_events = R"(
+SELECT 
+  time_event_id, next_occurence, meta, consumed FROM time_events 
+WHERE 
+  consumed = 0 AND 
+  next_occurence < ? 
+ORDER BY 
+  next_occurence ASC
+)";
+
+const std::string q_add_time_event =
+    "INSERT INTO time_events (next_occurence, meta, consumed) VALUES (?,?,?) RETURNING time_event_id";
+
+constexpr char q_consume_time_events[] = "UPDATE time_events SET consumed = 1 WHERE time_event_id IN ({})";
 
 void OrganizerDB::addTask(std::int64_t user_id, const std::string& title, const std::string& description) {
   execute<void>(q_insert_tasks, user_id, title, description);
@@ -124,4 +139,18 @@ std::int64_t OrganizerDB::addCall(const Call& call) {
 std::vector<Call> OrganizerDB::getCalls(std::int64_t user_id) {
   return execute<std::vector<Call>>(q_get_calls, user_id);
 }
+
+std::int64_t OrganizerDB::addTimeEvent(const time_event& event) {
+  return execute<int64_t>(q_add_time_event, event.next_occurence, event.meta, event.consumed);
+}
+
+void OrganizerDB::consumeTimeEvents(const std::vector<int64_t>& event_ids) {
+  auto query = fmt::format(q_consume_time_events, sql::n_placeholders(event_ids.size()));
+  execute<void>(query, sql::as_sequence(event_ids));
+}
+
+std::vector<time_event> OrganizerDB::getTimeEvents(ts_t max_time) {
+  return execute<std::vector<time_event>>(q_get_time_events, max_time);
+}
+
 }  // namespace bot

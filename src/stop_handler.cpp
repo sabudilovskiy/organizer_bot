@@ -12,7 +12,7 @@ void stop_handler(int signal) {
 
 }  // namespace
 
-void set_handler() {
+void set_stop_handler() {
   std::signal(SIGINT, stop_handler);
   std::signal(SIGTERM, stop_handler);
 }

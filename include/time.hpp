@@ -47,7 +47,7 @@ struct time_of_day {
 };
 
 struct schedule_unit {
-  weekday weekday;
+  weekday wd;
   time_of_day time;
   schedule_frequence frequence;
   ts_t start_date;

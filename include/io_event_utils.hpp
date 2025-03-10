@@ -11,7 +11,7 @@ template <io_event_type type>
 constexpr auto is = std::ranges::views::filter(
     [](const io_event& event) { return !event.consumed && (io_event_type)event.meta.index() == type; });
 
-constexpr auto only_cb_queries = is<io_event_type::callback_query>;
+constexpr auto only_cb_queries = is<io_event_type::cb_query>;
 constexpr auto only_commands = is<io_event_type::command>;
 constexpr auto only_messages = is<io_event_type::message>;
 

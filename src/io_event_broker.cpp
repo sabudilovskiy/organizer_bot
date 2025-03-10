@@ -90,6 +90,7 @@ void io_event_broker::save() {
   if (!consumed_events.empty()) {
     db_.consumeEvents(consumed_events);
   }
+  TGBM_LOG_INFO("Saved consumed {} io_events", consumed_events.size());
 }
 
 dd::task<void> io_event_broker::safe_process_update(tgbm::api::Update update) noexcept {
@@ -147,4 +148,23 @@ dd::task<void> io_event_broker::process_defferred_events() {
   }
 }
 
+dd::task<void> io_event_broker::process_old_events() {
+  for (auto& [user_id, user_events] : events_) {
+    auto& user_consumer = consumers_[user_id];
+    if (events::should_main_menu(user_events) || user_consumer.empty()) {
+      auto user = db_.fetchUser({.user_id = user_id});
+
+      user_consumer = main_menu(
+          Context{
+              .db = db_,
+              .api = api_,
+              .event_broker = *this,
+              .events = user_events,
+              .user_id = user_id,
+          },
+          std::move(user));
+    }
+    (void)co_await user_consumer.begin();
+  }
+}
 }  // namespace bot

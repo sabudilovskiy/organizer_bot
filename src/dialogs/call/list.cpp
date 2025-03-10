@@ -40,8 +40,8 @@ consumer_t call_list_menu(ContextWithUser ctx) {
     std::size_t last_on_this_page = std::min(4 + 5 * cur_page, calls.size());
     for (std::size_t i = first_on_this_page, idx = 0; i < last_on_this_page; i++, idx++) {
       auto& call = calls[i];
-      menu.add(fmt::format("🔹 {}. {} — {}, {}, {}", idx + 1, call.name, call.schedule.weekday,
-                           call.schedule.time, human_frequence(call.schedule.frequence)),
+      menu.add(fmt::format("🔹 {}. {} — {}, {}, {}", idx + 1, call.name, call.schedule.wd, call.schedule.time,
+                           human_frequence(call.schedule.frequence)),
                ListMenu(idx));
     }
     menu.add("⬅️ Предыдущая страница", ListMenu::prev_page);

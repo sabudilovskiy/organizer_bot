@@ -4,7 +4,7 @@
 
 namespace bot {
 
-void set_handler();
+void set_stop_handler();
 
 void need_stop();
 

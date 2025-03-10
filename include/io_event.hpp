@@ -1,6 +1,7 @@
 #pragma once
 
 #include "json/value.hpp"
+#include "meta.hpp"
 
 namespace bot {
 
@@ -19,27 +20,13 @@ struct message_meta_t {
 
 using io_event_meta = std::variant<cb_query_meta_t, command_meta_t, message_meta_t>;
 
-template <typename T, typename Variant>
-constexpr std::size_t variant_index() {
-  static constexpr std::size_t N = std::variant_size_v<Variant>;
-  return []<std::size_t... I>(std::index_sequence<I...>) {
-    std::array<bool, N> eq{std::is_same_v<std::variant_alternative_t<I, Variant>, T>...};
-    return std::distance(eq.begin(), std::find(eq.begin(), eq.end(), 1));
-  }(std::make_index_sequence<N>{});
-}
-
-template <typename T>
-constexpr std::size_t IoEventIndex() {
-  return variant_index<T, io_event_meta>();
-}
-
 enum struct io_event_type {
-  callback_query = IoEventIndex<cb_query_meta_t>(),
-  command = IoEventIndex<command_meta_t>(),
-  message = IoEventIndex<message_meta_t>(),
+  cb_query,
+  command,
+  message,
 };
 
-static_assert(magic_enum::enum_count<io_event_type>() == std::variant_size_v<io_event_meta>);
+static_assert(magic_enum::enum_names<io_event_type>() == meta_names_v<io_event_meta>);
 
 struct io_event {
   std::int64_t io_event_id;
@@ -61,13 +48,9 @@ struct io_event {
 };
 
 template <>
-struct json_reader<io_event_meta> {
-  static io_event_meta read(const boost::json::value& v);
-};
+struct json_reader<io_event_meta> : json_reader_meta<io_event_meta, io_event_type> {};
 
 template <>
-struct json_writer<io_event_meta> {
-  static void write(boost::json::value& v, const io_event_meta& meta);
-};
+struct json_writer<io_event_meta> : json_writer_meta<io_event_meta, io_event_type> {};
 
 }  // namespace bot

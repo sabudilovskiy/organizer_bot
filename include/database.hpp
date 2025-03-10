@@ -43,11 +43,11 @@ struct Database {
   Database(const std::string& dbPath, const auto& migrations);
 
   std::vector<PragmaInfo> get_info(const std::string& table) {
-    return sql::execute_unsafe<std::vector<PragmaInfo>>(db, q_get_table_info, table);
+    return execute_unsafe<std::vector<PragmaInfo>>(q_get_table_info, table);
   }
 
   std::vector<Migration> get_migrations() {
-    return sql::execute<std::vector<Migration>>(db, q_get_migration_count);
+    return execute<std::vector<Migration>>(q_get_migration_count);
   }
 
   template <typename T, typename... Args>
@@ -135,7 +135,7 @@ void Database<Tables...>::check_table(bool& failed) {
 
   if (exp_names != got_names) {
     TGBM_LOG_CRIT("Table {} has incorrect columns. Expected: [{}], got: [{}]", db_name,
-                  fmt::join(exp_names, ","), fmt::join(got_names, ","));
+                  exp_names | views::join(","), got_names | views::join(","));
     failed = true;
     return;
   }

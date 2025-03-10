@@ -5,6 +5,7 @@
 #include "io_event.hpp"
 #include "json/value.hpp"
 #include "sql/native_type.hpp"
+#include "time_event.hpp"
 
 namespace bot::sql {
 
@@ -47,6 +48,13 @@ struct parser_column<io_event_meta> {
   static constexpr auto nt = native_type::TEXT;
   static constexpr auto is_null = false;
   static io_event_meta parse(SQLite::Statement& statement, std::size_t index);
+};
+
+template <>
+struct parser_column<time_event_meta> {
+  static constexpr auto nt = native_type::TEXT;
+  static constexpr auto is_null = false;
+  static time_event_meta parse(SQLite::Statement& statement, std::size_t index);
 };
 
 template <typename T>

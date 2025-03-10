@@ -24,6 +24,8 @@ struct io_event_broker {
 
   dd::task<void> process_defferred_events();
 
+  dd::task<void> process_old_events();
+
   std::vector<io_event>& get_events(std::int64_t user_id);
 
   void load();

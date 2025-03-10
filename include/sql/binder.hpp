@@ -68,7 +68,7 @@ template <typename T>
   requires std::is_aggregate_v<T>
 struct binder<as_sequence<T>> {
   static void bind(SQLite::Statement& statement, const as_sequence<T>& arg, std::size_t& cur_index) {
-    auto v = [&]<typename Field>(const Field& field, std::size_t i) {
+    auto v = [&]<typename Field>(const Field& field, std::size_t i) mutable {
       binder<Field>::bind(statement, field, cur_index);
     };
     boost::pfr::for_each_field(arg.t, v);

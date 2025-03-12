@@ -23,7 +23,8 @@ struct time_event_dispatcher {
     return queue.top().next_occurence;
   }
 
-  time_event_dispatcher(const tgbm::api::telegram& api, OrganizerDB& db) noexcept : api(api), db(db) {
+  time_event_dispatcher(const tgbm::api::telegram& api, OrganizerDB& db) noexcept
+      : api(api), db(db) {
   }
 
   void load();
@@ -32,7 +33,8 @@ struct time_event_dispatcher {
 
   consumer_t execute() {
     auto now_v = now();
-    while (!queue.empty() && queue.top().next_occurence - now_v >= std::chrono::seconds(1)) {
+    while (!queue.empty() &&
+           queue.top().next_occurence - now_v >= std::chrono::seconds(1)) {
       auto e = queue.top();
       queue.pop();
       auto id = e.time_event_id;

@@ -14,7 +14,8 @@ inline const std::string q_create_migrations_table =
     "migration_sql TEXT NOT NULL"
     ");";
 
-inline const std::string q_get_migration_count = "SELECT id, applied_at, migration_sql FROM migrations";
+inline const std::string q_get_migration_count =
+    "SELECT id, applied_at, migration_sql FROM migrations";
 
 inline const std::string q_insert_migration =
     "INSERT INTO migrations (applied_at, migration_sql) VALUES (?, ?)";
@@ -76,13 +77,15 @@ struct Database {
 
 template <typename... Tables>
 Database<Tables...>::Database(const std::string& dbPath, const auto& migrations) {
-  db = std::make_unique<SQLite::Database>(dbPath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+  db = std::make_unique<SQLite::Database>(dbPath,
+                                          SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
   sql::execute<void>(db, q_create_migrations_table);
   // Get the number of applied migrations
   auto applied_migrations = get_migrations();
   if (applied_migrations.size() > migrations.size()) {
     TGBM_LOG_CRIT(
-        "Detected incompatible version of database. Application expects a version equal or less {:03}, but "
+        "Detected incompatible version of database. Application expects a version equal "
+        "or less {:03}, but "
         "dabase has {:03}",
         migrations.size(), applied_migrations.size());
     throw std::runtime_error("Incompatible version of database");

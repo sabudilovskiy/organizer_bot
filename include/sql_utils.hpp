@@ -14,7 +14,8 @@
 namespace bot::sql {
 
 template <typename Res, typename... Args>
-Res execute(std::unique_ptr<SQLite::Database>& db, const std::string& query, const Args&... args) {
+Res execute(std::unique_ptr<SQLite::Database>& db, const std::string& query,
+            const Args&... args) {
   SQLite::Statement statement(*db, query);
   std::size_t cur_index = 1;
   (binder<Args>::bind(statement, args, cur_index), ...);
@@ -24,7 +25,8 @@ Res execute(std::unique_ptr<SQLite::Database>& db, const std::string& query, con
 // use fmt::format instead of bind
 // only for queries like pragma
 template <typename Res, typename... Args>
-Res execute_unsafe(std::unique_ptr<SQLite::Database>& db, fmt::format_string<Args...> str, Args&&... args) {
+Res execute_unsafe(std::unique_ptr<SQLite::Database>& db, fmt::format_string<Args...> str,
+                   Args&&... args) {
   SQLite::Statement statement(*db, fmt::format(str, std::forward<Args>(args)...));
   return parser<Res>::parse(statement);
 }

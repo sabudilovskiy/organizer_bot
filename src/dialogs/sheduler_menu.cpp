@@ -15,7 +15,8 @@ enum struct schedulerMenu {
 consumer_t scheduler_menu(ContextWithUser ctx) {
   for (;;) {
     schedulerMenu choosed;
-    auto menu = Menu<schedulerMenu>{"📌 Здесь вы можете управлять своими задачами и напоминаниями", ID()};
+    auto menu = Menu<schedulerMenu>{
+        "📌 Здесь вы можете управлять своими задачами и напоминаниями", ID()};
     // clang-format off
   menu.add("➕ Добавить задачу",      schedulerMenu::add)
       .add("📜 Список задач ",        schedulerMenu::list)

@@ -4,121 +4,99 @@
 
 namespace bot::sql {
 
-std::string_view type_column(const SQLite::Column& column) {
-  const int INTEGER = SQLITE_INTEGER;
-  const int FLOAT = SQLITE_FLOAT;
-  const int TEXT = SQLITE_TEXT;
-  const int BLOB = SQLITE_BLOB;
-  const int Null = SQLITE_NULL;
-  switch (column.getType()) {
+native_type from_sqlite_int(int type) {
+  switch (type) {
     case SQLITE_INTEGER:
-      return "integer";
+      return native_type::integer;
     case SQLITE_FLOAT:
-      return "float";
+      return native_type::floating;
     case SQLITE_BLOB:
-      return "blot";
-    case SQLITE_NULL:
-      return "null";
+      return native_type::blob;
     case SQLITE_TEXT:
-      return "text";
+      return native_type::text;
+    case SQLITE_NULL:
+      return native_type::null;
   }
-  return "unknown";
+  tgbm::unreachable();
 }
 
-#define LOG_ERROR_TYPE(EXPECTED_TYPE)                                                                   \
-  TGBM_LOG_CRIT(                                                                                        \
-      "Error while executing query: [{}]. Missmatch types on column with index {} and name `{}`, got: " \
-      "[{}], "                                                                                          \
-      "expected: "                                                                                      \
-      "[{}]",                                                                                           \
-      statement.getQuery(), index, col.getName(), type_column(col), #EXPECTED_TYPE);
+bool parse_native_type(std::string_view str, native_type& out) {
+  if (str == "INTEGER")
+    out = native_type::integer;
+  else if (str == "TEXT")
+    out = native_type::text;
+  else if (str == "BLOB")
+    out = native_type::blob;
+  else if (str == "NULL")
+    out = native_type::null;
+  else if (str == "FLOAT")
+    out = native_type::floating;
+  else
+    return false;
+  return true;
+}
 
-bool parser_column<bool>::parse(SQLite::Statement& statement, std::size_t index) {
-  if (statement.getColumnCount() <= index) {
-    throw std::runtime_error("too big index");
-  }
-  auto col = statement.getColumn(index);
+bool parser_column<bool>::parse(const SQLite::Column& col, bool& out) {
   if (!col.isInteger()) {
-    LOG_ERROR_TYPE(Integer);
-    throw std::runtime_error("Unexpected type");
+    return false;
   }
-  return col.getInt64() == 1;
+  out = col.getInt64() == 1;
+  return true;
 }
 
-int64_t parser_column<int64_t>::parse(SQLite::Statement& statement, std::size_t index) {
-  if (statement.getColumnCount() <= index) {
-    throw std::runtime_error("too big index");
-  }
-  auto col = statement.getColumn(index);
+bool parser_column<int64_t>::parse(const SQLite::Column& col, int64_t& out) {
   if (!col.isInteger()) {
-    LOG_ERROR_TYPE(Integer);
-    throw std::runtime_error("Unexpected type");
+    return false;
   }
-  return col.getInt64();
+  out = col.getInt64();
+  return true;
 }
 
-json_value parser_column<json_value>::parse(SQLite::Statement& statement, std::size_t index) {
-  if (statement.getColumnCount() <= index) {
-    throw std::runtime_error("too big index");
-  }
-  auto col = statement.getColumn(index);
+bool parser_column<json_value>::parse(const SQLite::Column& col, json_value& out) {
   if (!col.isText()) {
-    LOG_ERROR_TYPE(Text);
-    throw std::runtime_error("Unexpected type");
+    return false;
   }
-  auto res = boost::json::parse(col.getString());
-  if (!res.is_object()) {
-    throw std::runtime_error("Unexpected type");
-  }
-  return json_value(std::move(res.as_object()));
+  out = json_value{boost::json::parse(col.getString())};
+  return true;
 }
 
-std::string parser_column<std::string>::parse(SQLite::Statement& statement, std::size_t index) {
-  if (statement.getColumnCount() <= index) {
-    throw std::runtime_error("too big index");
-  }
-  auto col = statement.getColumn(index);
+bool parser_column<std::string>::parse(const SQLite::Column& col, std::string& out) {
   if (!col.isText()) {
-    LOG_ERROR_TYPE(Text);
-    throw std::runtime_error("Unexpected type");
+    return false;
   }
-  return col.getString();
+  out = col.getString();
+  return true;
 }
 
-ts_t parser_column<ts_t>::parse(SQLite::Statement& statement, std::size_t index) {
-  if (statement.getColumnCount() <= index) {
-    throw std::runtime_error("too big index");
-  }
-  auto col = statement.getColumn(index);
+bool parser_column<ts_t>::parse(const SQLite::Column& col, ts_t& out) {
   if (!col.isText()) {
-    LOG_ERROR_TYPE(Text);
-    throw std::runtime_error("Unexpected type");
+    return false;
   }
-  return parse_ts(col.getString());
+  return parse_ts(col.getString(), out);
 }
 
-io_event_meta parser_column<io_event_meta>::parse(SQLite::Statement& statement, std::size_t index) {
-  if (statement.getColumnCount() <= index) {
-    throw std::runtime_error("too big index");
-  }
-  auto col = statement.getColumn(index);
+bool parser_column<io_event_meta>::parse(const SQLite::Column& col, io_event_meta& out) {
   if (!col.isText()) {
-    LOG_ERROR_TYPE(Text);
-    throw std::runtime_error("Unexpected type");
+    return false;
   }
-  return from_json_str<io_event_meta>(col.getString());
+  out = from_json_str<io_event_meta>(col.getString());
+  return true;
 }
 
-time_event_meta parser_column<time_event_meta>::parse(SQLite::Statement& statement, std::size_t index) {
-  if (statement.getColumnCount() <= index) {
-    throw std::runtime_error("too big index");
-  }
-  auto col = statement.getColumn(index);
+bool parser_column<time_event_meta>::parse(const SQLite::Column& col,
+                                           time_event_meta& out) {
   if (!col.isText()) {
-    LOG_ERROR_TYPE(Text);
-    throw std::runtime_error("Unexpected type");
+    return false;
   }
-  return from_json_str<time_event_meta>(col.getString());
+  out = from_json_str<time_event_meta>(col.getString());
+  return true;
+}
+
+bool parser_column<native_type>::parse(const SQLite::Column& col, native_type& out) {
+  if (!col.isText()) {
+    return false;
+  }
+  return parse_native_type(col.getString(), out);
 }
 
 }  // namespace bot::sql

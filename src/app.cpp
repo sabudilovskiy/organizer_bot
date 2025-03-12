@@ -1,7 +1,10 @@
 #include "app.hpp"
 
+#include <tgbm/bot.hpp>
+#include <tgbm/api/types/all.hpp>
 #include <tgbm/utils/formatters.hpp>
 
+#include "formatters/all.hpp"
 #include "stop_handler.hpp"
 
 namespace bot {

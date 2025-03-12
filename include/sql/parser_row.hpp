@@ -2,19 +2,84 @@
 
 #include <boost/pfr.hpp>
 
+#include "formatters/all.hpp"
 #include "sql/parser_column.hpp"
 #include "utils.hpp"
 
 #include <tgbm_replace/logger.hpp>
 
 namespace bot::sql {
+
+namespace details {
+
+template <typename T>
+inline void check_column_type(const std::string& query, const SQLite::Column& column,
+                              std::size_t index) {
+  std::string_view type_name = name_type_v<T>;
+  native_type expected_column_type = parser_column<T>::nt;
+  bool is_nullable = parser_column<T>::is_null;
+
+  std::string_view got_name = column.getName();
+  if (!is_nullable && column.isNull()) {
+    throw_formatted(
+        "Error while executing query: [{}]. "
+        "C++ Type: {}"
+        "Unexpected null value got from column `{}` with index {}",
+        query, type_name, got_name, index);
+  }
+  if (is_nullable && column.isNull()) {
+    return;
+  }
+  auto got_type = from_sqlite_int(column.getType());
+
+  if (expected_column_type != got_type) {
+    throw_formatted(
+        "Error while executing query: [{}]. "
+        "C++ Type: {}"
+        "Missmatch names column `{}` with index {} detected: "
+        " got type: `{}`, expected type: `{}`",
+        query, type_name, got_name, index, got_type, expected_column_type);
+  }
+}
+
+template <typename T>
+inline void check_column_name(const std::string& query, const SQLite::Column& column,
+                              std::size_t index, std::string_view expected_column_name) {
+  std::string_view type_name = name_type_v<T>;
+  std::string_view got_name = column.getName();
+
+  if (expected_column_name != got_name) {
+    throw_formatted(
+        "Error while executing query: [{}]. "
+        "C++ Type: {}"
+        " Missmatch names column with index {} detected: "
+        " got name: `{}`, expected name: `{}`",
+        query, type_name, index, got_name, expected_column_name);
+  }
+}
+
+template <typename T>
+inline void check_column_all(const std::string& query, const SQLite::Column& column,
+                             std::size_t index, std::string_view expected_column_name) {
+  check_column_type<T>(query, column, index);
+  check_column_name<T>(query, column, index, expected_column_name);
+}
+}  // namespace details
+
 template <typename T>
 struct parser_row {
   static T parse(SQLite::Statement& statement) {
+    T out;
     if (statement.getColumnCount() != 1) {
       throw std::runtime_error("Unexpected size");
     }
-    return parser_column<T>::parse(statement, 0);
+    auto col = statement.getColumn(0);
+    TGBM_ON_DEBUG(details::check_column_type<T>(statement.getQuery(), col, 0));
+    bool ok = parser_column<T>::parse(col, out);
+    if (!ok) {
+      throw_formatted("Fail parse `{}`", name_type_v<T>);
+    }
+    return out;
   }
 };
 
@@ -23,16 +88,15 @@ template <typename T>
 struct parser_row<T> {
   static T parse(SQLite::Statement& statement) {
     T out;
-    auto v = [&]<typename Info, typename Field>(Field& field) {
-      TGBM_ON_DEBUG({
-        std::string_view got_name = statement.getColumnName(Info::index);
-        std::string_view expected_name = Info::name.AsStringView();
-        if (got_name != expected_name) {
-          throw_formatted("[T = {}] Missmatch field name `{}` and column name `{}` detected", name_type_v<T>,
-                          got_name, expected_name);
-        }
-      });
-      field = parser_column<Field>::parse(statement, Info::index);
+    auto v = [&]<typename Info, typename Field>(Field& out) {
+      std::size_t index = Info::index;
+      std::string_view name = Info::name.AsStringView();
+      auto col = statement.getColumn(index);
+      TGBM_ON_DEBUG(
+          details::check_column_all<Field>(statement.getQuery(), col, index, name));
+      if (!parser_column<Field>::parse(col, out)) {
+        throw_formatted("Fail parse `{}` in `{}`", name, name_type_v<T>);
+      }
     };
     pfr_extension::visit_object(out, v);
     return out;

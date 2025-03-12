@@ -16,9 +16,11 @@ const std::string q_insert_tasks =
     "?, ?, 0, datetime('now'))";
 const std::string q_delete_task = "DELETE FROM tasks WHERE id = ? AND user_id = ?";
 const std::string q_update_task =
-    "UPDATE tasks SET title = ?, description = ?, status = ? WHERE id = ? AND user_id = ?";
+    "UPDATE tasks SET title = ?, description = ?, status = ? WHERE id = ? AND user_id = "
+    "?";
 const std::string q_get_all_tasks =
-    "SELECT id, user_id, title, description, status, created_at FROM tasks WHERE user_id = ?";
+    "SELECT id, user_id, title, description, status, created_at FROM tasks WHERE user_id "
+    "= ?";
 const std::string q_filter_by_status =
     "SELECT id, user_id, title, description, status, created_at FROM tasks WHERE "
     "user_id = ? AND status = ?";
@@ -30,24 +32,31 @@ const std::string q_find_task_by_id =
     "FROM tasks WHERE user_id = ? AND id = ?";
 
 const std::string q_insert_user =
-    "INSERT INTO users (user_id, chat_id, message_id, additional_messages, gmt_offset_m) VALUES (?, ?, ?, ?, "
+    "INSERT INTO users (user_id, chat_id, message_id, additional_messages, gmt_offset_m) "
+    "VALUES (?, ?, ?, ?, "
     "?)";
 const std::string q_get_user =
-    "SELECT user_id, chat_id, message_id, additional_messages, gmt_offset_m FROM users WHERE user_id = ?";
+    "SELECT user_id, chat_id, message_id, additional_messages, gmt_offset_m FROM users "
+    "WHERE user_id = ?";
 const std::string q_update_user =
-    "UPDATE users SET message_id = ?, additional_messages = ?, gmt_offset_m = ? WHERE user_id = ?";
+    "UPDATE users SET message_id = ?, additional_messages = ?, gmt_offset_m = ? WHERE "
+    "user_id = ?";
 
 const std::string q_add_io_event =
-    "INSERT INTO io_events (ts, user_id, meta, consumed) VALUES (?, ?, ?, 0) RETURNING io_event_id";
+    "INSERT INTO io_events (ts, user_id, meta, consumed) VALUES (?, ?, ?, 0) RETURNING "
+    "io_event_id";
 
 const std::string q_select_io_events =
-    "SELECT io_event_id, user_id, ts, meta, consumed FROM io_events where consumed = 0 ORDER BY ts ASC, "
+    "SELECT io_event_id, user_id, ts, meta, consumed FROM io_events where consumed = 0 "
+    "ORDER BY ts ASC, "
     "user_id ASC";
 
-constexpr char q_consume_io_events[] = "UPDATE io_events SET consumed = 1 WHERE io_event_id IN ({})";
+constexpr char q_consume_io_events[] =
+    "UPDATE io_events SET consumed = 1 WHERE io_event_id IN ({})";
 
 const std::string q_insert_call =
-    "INSERT INTO calls (user_id, name, description, schedule) VALUES (?,?,?,?) RETURNING call_id";
+    "INSERT INTO calls (user_id, name, description, schedule) VALUES (?,?,?,?) RETURNING "
+    "call_id";
 
 const std::string q_get_calls =
     "SELECT call_id, user_id, name, description, schedule FROM calls WHERE user_id = ?";
@@ -63,11 +72,14 @@ ORDER BY
 )";
 
 const std::string q_add_time_event =
-    "INSERT INTO time_events (next_occurence, meta, consumed) VALUES (?,?,?) RETURNING time_event_id";
+    "INSERT INTO time_events (next_occurence, meta, consumed) VALUES (?,?,?) RETURNING "
+    "time_event_id";
 
-constexpr char q_consume_time_events[] = "UPDATE time_events SET consumed = 1 WHERE time_event_id IN ({})";
+constexpr char q_consume_time_events[] =
+    "UPDATE time_events SET consumed = 1 WHERE time_event_id IN ({})";
 
-void OrganizerDB::addTask(std::int64_t user_id, const std::string& title, const std::string& description) {
+void OrganizerDB::addTask(std::int64_t user_id, const std::string& title,
+                          const std::string& description) {
   execute<void>(q_insert_tasks, user_id, title, description);
 }
 
@@ -75,8 +87,9 @@ void OrganizerDB::deleteTask(std::int64_t id, std::int64_t user_id) {
   execute<void>(q_delete_task, id, user_id);
 }
 
-void OrganizerDB::updateTask(std::int64_t id, std::int64_t user_id, const std::string& title,
-                             const std::string& description, bool status) {
+void OrganizerDB::updateTask(std::int64_t id, std::int64_t user_id,
+                             const std::string& title, const std::string& description,
+                             bool status) {
   execute<void>(q_update_task, id, user_id, title, description, status);
 }
 
@@ -88,9 +101,11 @@ std::vector<Task> OrganizerDB::filterTasksByStatus(std::int64_t user_id, bool st
   return execute<std::vector<Task>>(q_filter_by_status, user_id, status);
 }
 
-std::vector<Task> OrganizerDB::searchTasks(std::int64_t user_id, const std::string& keyword) {
+std::vector<Task> OrganizerDB::searchTasks(std::int64_t user_id,
+                                           const std::string& keyword) {
   std::string likeKeyword = "%" + keyword + "%";
-  return execute<std::vector<Task>>(q_search_tasks_by_keyword, user_id, likeKeyword, likeKeyword);
+  return execute<std::vector<Task>>(q_search_tasks_by_keyword, user_id, likeKeyword,
+                                    likeKeyword);
 }
 
 OrganizerDB::OrganizerDB(const std::string& dbPath) : database(dbPath, sql::migrations) {
@@ -109,10 +124,12 @@ User OrganizerDB::fetchUser(const RequestUser& user) {
 }
 
 void OrganizerDB::updateUser(const User& user) {
-  execute<void>(q_update_user, user.message_id, user.additional_messages, user.user_id, user.gmt_offset_m);
+  execute<void>(q_update_user, user.message_id, user.additional_messages, user.user_id,
+                user.gmt_offset_m);
 }
 
-tgbm::api::optional<Task> OrganizerDB::find_task(std::int64_t user_id, std::int64_t task_id) {
+tgbm::api::optional<Task> OrganizerDB::find_task(std::int64_t user_id,
+                                                 std::int64_t task_id) {
   return execute<tgbm::api::optional<Task>>(q_find_task_by_id, user_id, task_id);
 }
 
@@ -128,12 +145,14 @@ void OrganizerDB::consumeEvents(const std::vector<int64_t>& event_ids) {
   if (event_ids.empty()) {
     return;
   }
-  std::string query = fmt::format(q_consume_io_events, sql::n_placeholders(event_ids.size()));
+  std::string query =
+      fmt::format(q_consume_io_events, sql::n_placeholders(event_ids.size()));
   execute<void>(query, sql::as_sequence(event_ids));
 }
 
 std::int64_t OrganizerDB::addCall(const Call& call) {
-  return execute<std::int64_t>(q_insert_call, call.user_id, call.name, call.description, call.schedule);
+  return execute<std::int64_t>(q_insert_call, call.user_id, call.name, call.description,
+                               call.schedule);
 }
 
 std::vector<Call> OrganizerDB::getCalls(std::int64_t user_id) {
@@ -141,7 +160,8 @@ std::vector<Call> OrganizerDB::getCalls(std::int64_t user_id) {
 }
 
 std::int64_t OrganizerDB::addTimeEvent(const time_event& event) {
-  return execute<int64_t>(q_add_time_event, event.next_occurence, event.meta, event.consumed);
+  return execute<int64_t>(q_add_time_event, event.next_occurence, event.meta,
+                          event.consumed);
 }
 
 void OrganizerDB::consumeTimeEvents(const std::vector<int64_t>& event_ids) {

@@ -20,6 +20,9 @@ ts_t parse_short_ts(const std::string& str);
 optional<ts_t> parse_ts(const std::string& str, use_optional) noexcept;
 optional<ts_t> parse_short_ts(const std::string& str, use_optional) noexcept;
 
+bool parse_ts(const std::string& str, ts_t& out) noexcept;
+bool parse_short_ts(const std::string& str, ts_t& out) noexcept;
+
 using weekday = std::chrono::weekday;
 
 optional<weekday> parse_weekday(std::string_view str, use_optional) noexcept;

@@ -61,7 +61,9 @@ struct json_writer_meta {
   static void write(boost::json::value& v, const Meta& meta) {
     boost::json::object res;
     res["type"] = magic_enum::enum_name(MetaType(meta.index()));
-    std::visit([&]<typename V>(const V& value) { json_writer<V>::write(res["value"], value); }, meta);
+    std::visit(
+        [&]<typename V>(const V& value) { json_writer<V>::write(res["value"], value); },
+        meta);
     v = std::move(res);
   }
 };

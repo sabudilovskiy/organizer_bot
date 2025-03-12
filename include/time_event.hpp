@@ -40,9 +40,11 @@ struct time_event {
 };
 
 template <>
-struct json_reader<time_event_meta> : json_reader_meta<time_event_meta, time_event_type> {};
+struct json_reader<time_event_meta> : json_reader_meta<time_event_meta, time_event_type> {
+};
 
 template <>
-struct json_writer<time_event_meta> : json_writer_meta<time_event_meta, time_event_type> {};
+struct json_writer<time_event_meta> : json_writer_meta<time_event_meta, time_event_type> {
+};
 
 }  // namespace bot

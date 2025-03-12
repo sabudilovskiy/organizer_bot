@@ -8,8 +8,9 @@ namespace bot::events {
 using namespace std::ranges::views;
 
 template <io_event_type type>
-constexpr auto is = std::ranges::views::filter(
-    [](const io_event& event) { return !event.consumed && (io_event_type)event.meta.index() == type; });
+constexpr auto is = std::ranges::views::filter([](const io_event& event) {
+  return !event.consumed && (io_event_type)event.meta.index() == type;
+});
 
 constexpr auto only_cb_queries = is<io_event_type::cb_query>;
 constexpr auto only_commands = is<io_event_type::command>;

@@ -11,34 +11,50 @@ namespace {
 constexpr char fmt_ts_t[] = "%Y-%m-%d %H:%M:%S";
 constexpr char fmt_short_ts_t[] = "%d.%m.%Y";
 
-optional<ts_t> ts_from_str(std::string_view str, const char* fmt) {
-  ts_t out;
-
+bool ts_from_str(std::string_view str, const char* fmt, ts_t& out) {
   std::tm tm = {};
   std::ispanstream iss(str);
   iss >> std::get_time(&tm, fmt);
   if (iss.fail()) {
-    return std::nullopt;
+    return false;
   }
   std::time_t time = std::mktime(&tm);
-  return ts_t(std::chrono::seconds(time));
+  out = ts_t(std::chrono::seconds(time));
+  return true;
 }
 
 }  // namespace
 ts_t now() {
-  return std::chrono::zoned_time{"UTC", std::chrono::system_clock::now()}.get_local_time();
+  return std::chrono::zoned_time{"UTC", std::chrono::system_clock::now()}
+      .get_local_time();
 }
 
 std::string to_string(const ts_t& ts) {
   return std::format("{:%Y-%m-%d %H:%M:%S}", ts);
 }
 
+bool parse_ts(const std::string& str, ts_t& out) noexcept {
+  return ts_from_str(str, fmt_ts_t, out);
+}
+
+bool parse_short_ts(const std::string& str, ts_t& out) noexcept {
+  return ts_from_str(str, fmt_short_ts_t, out);
+}
+
 optional<ts_t> parse_ts(const std::string& str, use_optional) noexcept {
-  return ts_from_str(str, fmt_ts_t);
+  optional<ts_t> out;
+  if (!ts_from_str(str, fmt_ts_t, out.emplace())) {
+    out.reset();
+  }
+  return out;
 }
 
 optional<ts_t> parse_short_ts(const std::string& str, use_optional) noexcept {
-  return ts_from_str(str, fmt_short_ts_t);
+  optional<ts_t> out;
+  if (!ts_from_str(str, fmt_short_ts_t, out.emplace())) {
+    out.reset();
+  }
+  return out;
 }
 
 ts_t parse_ts(const std::string& str) {
@@ -106,4 +122,5 @@ std::string_view human_frequence(schedule_frequence freq) noexcept {
   }
   tgbm::unreachable();
 }
+
 }  // namespace bot

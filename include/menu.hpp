@@ -98,7 +98,8 @@ template <typename T>
       }
       auto [got_idx, got_id, got_ts] = res_scan->values();
       if (id_ != got_id) {
-        TGBM_LOG_WARN("Got cb query with stranger id. Expected_id : {}, Data: [{}]", id_, data);
+        TGBM_LOG_WARN("Got cb query with stranger id. Expected_id : {}, Data: [{}]", id_,
+                      data);
         continue;
       }
       auto found = cb_map.find(got_idx);

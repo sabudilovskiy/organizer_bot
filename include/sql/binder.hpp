@@ -19,7 +19,8 @@ struct binder {};
 
 template <>
 struct binder<std::string> {
-  static void bind(SQLite::Statement& statement, const std::string& arg, std::size_t& cur_index) {
+  static void bind(SQLite::Statement& statement, const std::string& arg,
+                   std::size_t& cur_index) {
     statement.bindNoCopy(cur_index++, arg);
   }
 };
@@ -40,14 +41,16 @@ struct binder<bool> {
 
 template <>
 struct binder<json_value> {
-  static void bind(SQLite::Statement& statement, const json_value& arg, std::size_t& cur_index) {
+  static void bind(SQLite::Statement& statement, const json_value& arg,
+                   std::size_t& cur_index) {
     statement.bind(cur_index++, serialize(arg.value));
   }
 };
 
 template <typename T>
 struct binder<tgbm::api::optional<T>> {
-  static void bind(SQLite::Statement& statement, const tgbm::api::optional<T>& arg, std::size_t& cur_index) {
+  static void bind(SQLite::Statement& statement, const tgbm::api::optional<T>& arg,
+                   std::size_t& cur_index) {
     if (!arg) {
       statement.bind(cur_index++);
     } else {
@@ -58,7 +61,8 @@ struct binder<tgbm::api::optional<T>> {
 
 template <>
 struct binder<ts_t> {
-  static void bind(SQLite::Statement& statement, const ts_t& arg, std::size_t& cur_index) {
+  static void bind(SQLite::Statement& statement, const ts_t& arg,
+                   std::size_t& cur_index) {
     auto str = to_string(arg);
     statement.bind(cur_index++, str);
   }
@@ -67,7 +71,8 @@ struct binder<ts_t> {
 template <typename T>
   requires std::is_aggregate_v<T>
 struct binder<as_sequence<T>> {
-  static void bind(SQLite::Statement& statement, const as_sequence<T>& arg, std::size_t& cur_index) {
+  static void bind(SQLite::Statement& statement, const as_sequence<T>& arg,
+                   std::size_t& cur_index) {
     auto v = [&]<typename Field>(const Field& field, std::size_t i) mutable {
       binder<Field>::bind(statement, field, cur_index);
     };
@@ -104,14 +109,16 @@ struct binder<T> {
 
 template <typename... Ts>
 struct binder<std::variant<Ts...>> {
-  static void bind(SQLite::Statement& statement, const std::variant<Ts...>& t, std::size_t& cur_index) {
+  static void bind(SQLite::Statement& statement, const std::variant<Ts...>& t,
+                   std::size_t& cur_index) {
     statement.bind(cur_index++, to_json_str(t));
   }
 };
 
 template <>
 struct binder<std::chrono::weekday> {
-  static void bind(SQLite::Statement& statement, const std::chrono::weekday& w, std::size_t& cur_index) {
+  static void bind(SQLite::Statement& statement, const std::chrono::weekday& w,
+                   std::size_t& cur_index) {
     statement.bind(cur_index++, std::string(to_string(w)));
   }
 };

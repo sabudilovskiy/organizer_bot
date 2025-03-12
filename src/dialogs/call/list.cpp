@@ -26,8 +26,10 @@ consumer_t call_list_menu(ContextWithUser ctx) {
 
   if (calls.empty()) {
     co_await ctx.send_text(
-        "📭 У вас пока нет запланированных созвонов. 📌 Созвоны помогают не забывать о встречах и заранее "
-        "получать напоминания. Добавьте первый созвон, и я помогу вам его не пропустить!");
+        "📭 У вас пока нет запланированных созвонов. 📌 Созвоны помогают не забывать о "
+        "встречах и заранее "
+        "получать напоминания. Добавьте первый созвон, и я помогу вам его не "
+        "пропустить!");
     co_return;
   }
 
@@ -35,13 +37,15 @@ consumer_t call_list_menu(ContextWithUser ctx) {
   std::size_t pages = (calls.size() / one_page) + (calls.size() % one_page != 0);
 
   for (;;) {
-    Menu<ListMenu> menu(fmt::format("📌 Ваши запланированные созвоны ({}/{}):", cur_page + 1, pages), ID());
+    Menu<ListMenu> menu(
+        fmt::format("📌 Ваши запланированные созвоны ({}/{}):", cur_page + 1, pages),
+        ID());
     std::size_t first_on_this_page = 5 * cur_page;
     std::size_t last_on_this_page = std::min(4 + 5 * cur_page, calls.size());
     for (std::size_t i = first_on_this_page, idx = 0; i < last_on_this_page; i++, idx++) {
       auto& call = calls[i];
-      menu.add(fmt::format("🔹 {}. {} — {}, {}, {}", idx + 1, call.name, call.schedule.wd, call.schedule.time,
-                           human_frequence(call.schedule.frequence)),
+      menu.add(fmt::format("🔹 {}. {} — {}, {}, {}", idx + 1, call.name, call.schedule.wd,
+                           call.schedule.time, human_frequence(call.schedule.frequence)),
                ListMenu(idx));
     }
     menu.add("⬅️ Предыдущая страница", ListMenu::prev_page);

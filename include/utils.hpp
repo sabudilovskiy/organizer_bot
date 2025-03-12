@@ -17,7 +17,8 @@ constexpr std::string_view name_of_type() {
   std::string_view res = "";
 #if defined(__GNUC__) && !defined(__clang__)
   res = __PRETTY_FUNCTION__;
-  res.remove_prefix(sizeof("consteval std::string_view bot::details::name_of_type() [with T ="));
+  res.remove_prefix(
+      sizeof("consteval std::string_view bot::details::name_of_type() [with T ="));
   auto idx = res.find(";");
   res.remove_suffix(res.size() - idx);
 #elif defined(__clang__)
@@ -27,8 +28,8 @@ constexpr std::string_view name_of_type() {
 #elif defined(_MSC_VER)
   res = __FUNCSIG__;
   //   res.remove_prefix(sizeof(""));
-  // MSVC may return different names for SAME type if it was decalred as struct and implemented as class or
-  // smth like
+  // MSVC may return different names for SAME type if it was decalred as struct and
+  // implemented as class or smth like
   auto start = res.find("name_of_type");
   res.remove_prefix(start + sizeof("name_of_type"));
   res.remove_suffix(sizeof(">(void)") - 1);
@@ -74,7 +75,8 @@ struct variant_index {
   static constexpr std::size_t value = []() {
     static constexpr std::size_t N = std::variant_size_v<Variant>;
     return []<std::size_t... I>(std::index_sequence<I...>) {
-      std::array<bool, N> eq{std::is_same_v<std::variant_alternative_t<I, Variant>, T>...};
+      std::array<bool, N> eq{
+          std::is_same_v<std::variant_alternative_t<I, Variant>, T>...};
       return std::distance(eq.begin(), std::find(eq.begin(), eq.end(), 1));
     }(std::make_index_sequence<N>{});
   }();
@@ -89,7 +91,8 @@ struct variant_names {
   using value_type = std::array<std::string_view, N>;
 
   static constexpr value_type value = []<std::size_t... I>(std::index_sequence<I...>) {
-    return value_type{name_without_ns(name_type_v<std::variant_alternative_t<I, Variant>>)...};
+    return value_type{
+        name_without_ns(name_type_v<std::variant_alternative_t<I, Variant>>)...};
   }(std::make_index_sequence<N>{});
 };
 

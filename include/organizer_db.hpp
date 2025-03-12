@@ -20,7 +20,8 @@ struct OrganizerDB : Database<io_event, time_event, Task, User> {
 
   void updateUser(const User& user);
 
-  void addTask(std::int64_t user_id, const std::string& title, const std::string& description);
+  void addTask(std::int64_t user_id, const std::string& title,
+               const std::string& description);
 
   void deleteTask(std::int64_t id, std::int64_t user_id);
 

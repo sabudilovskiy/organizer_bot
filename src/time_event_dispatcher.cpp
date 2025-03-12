@@ -4,8 +4,10 @@ namespace bot {
 
 namespace {
 
-consumer_t handle_all_calls(OrganizerDB& db, const tgbm::api::telegram& api, time_event event) {
+consumer_t handle_all_calls(OrganizerDB& db, const tgbm::api::telegram& api,
+                            time_event event) {
   auto calls = db.getCalls(event.reminder_all_calls_meta().user_id);
+  co_return;
 }
 
 }  // namespace

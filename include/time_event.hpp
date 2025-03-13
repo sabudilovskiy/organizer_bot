@@ -29,6 +29,7 @@ struct time_event {
   bool consumed;
 
   static constexpr std::string_view db_name = "time_events";
+  using meta_type = time_event_type;
 
   reminder_all_calls_meta_t& reminder_all_calls_meta();
   const reminder_all_calls_meta_t& reminder_all_calls_meta() const;
@@ -36,15 +37,9 @@ struct time_event {
   reminder_call_meta_t& reminder_call_meta();
   const reminder_call_meta_t& reminder_call_meta() const;
 
-  time_event_type type();
+  time_event_type type() const;
 };
 
-template <>
-struct json_reader<time_event_meta> : json_reader_meta<time_event_meta, time_event_type> {
-};
-
-template <>
-struct json_writer<time_event_meta> : json_writer_meta<time_event_meta, time_event_type> {
-};
+static_assert(aggregate_with_meta<time_event>);
 
 }  // namespace bot

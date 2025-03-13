@@ -12,13 +12,10 @@ namespace bot::sql {
 
 namespace details {
 
-template <typename T>
-inline void check_column_type(const std::string& query, const SQLite::Column& column,
-                              std::size_t index) {
-  std::string_view type_name = name_type_v<T>;
-  native_type expected_column_type = parser_column<T>::nt;
-  bool is_nullable = parser_column<T>::is_null;
-
+inline void check_column_type_erased(const std::string& query,
+                                     const SQLite::Column& column, std::size_t index,
+                                     std::string_view type_name,
+                                     native_type expected_column_type, bool is_nullable) {
   std::string_view got_name = column.getName();
   if (!is_nullable && column.isNull()) {
     throw_formatted(
@@ -43,9 +40,16 @@ inline void check_column_type(const std::string& query, const SQLite::Column& co
 }
 
 template <typename T>
-inline void check_column_name(const std::string& query, const SQLite::Column& column,
-                              std::size_t index, std::string_view expected_column_name) {
-  std::string_view type_name = name_type_v<T>;
+inline void check_column_type(const std::string& query, const SQLite::Column& column,
+                              std::size_t index) {
+  check_column_type_erased(query, column, index, name_type_v<T>, parser_column<T>::nt,
+                           parser_column<T>::is_null);
+}
+
+inline void check_column_name_erased(const std::string& query,
+                                     const SQLite::Column& column, std::size_t index,
+                                     std::string_view expected_column_name,
+                                     std::string_view type_name) {
   std::string_view got_name = column.getName();
 
   if (expected_column_name != got_name) {
@@ -59,11 +63,28 @@ inline void check_column_name(const std::string& query, const SQLite::Column& co
 }
 
 template <typename T>
+inline void check_column_name(const std::string& query, const SQLite::Column& column,
+                              std::size_t index, std::string_view expected_column_name) {
+  check_column_name_erased(query, column, index, expected_column_name, name_type_v<T>);
+}
+
+template <typename T>
 inline void check_column_all(const std::string& query, const SQLite::Column& column,
                              std::size_t index, std::string_view expected_column_name) {
   check_column_type<T>(query, column, index);
   check_column_name<T>(query, column, index, expected_column_name);
 }
+
+inline void check_column_all_erased(const std::string& query,
+                                    const SQLite::Column& column, std::size_t index,
+                                    std::string_view type_name,
+                                    std::string_view expected_column_name,
+                                    native_type expected_column_type, bool is_nullable) {
+  check_column_type_erased(query, column, index, type_name, expected_column_type,
+                           is_nullable);
+  check_column_name_erased(query, column, index, expected_column_name, type_name);
+}
+
 }  // namespace details
 
 template <typename T>
@@ -84,7 +105,7 @@ struct parser_row {
 };
 
 template <typename T>
-  requires std::is_aggregate_v<T>
+  requires tgbm::aggregate<T>
 struct parser_row<T> {
   static T parse(SQLite::Statement& statement) {
     T out;
@@ -99,6 +120,37 @@ struct parser_row<T> {
       }
     };
     pfr_extension::visit_object(out, v);
+    return out;
+  }
+};
+
+template <typename T>
+  requires aggregate_with_meta<T>
+struct parser_row<T> {
+  static T parse(SQLite::Statement& statement) {
+    T out;
+    std::size_t meta_type_index = pfr_extension::tuple_size_v<T>;
+    auto meta_type_col = statement.getColumn(meta_type_index);
+    TGBM_ON_DEBUG(details::check_column_all<meta_type_t<T>>(
+        statement.getQuery(), meta_type_col, meta_type_index, "meta_type"));
+
+    meta_type_t<T> meta_type;
+    if (!parser_column<meta_type_t<T>>::parse(meta_type_col, meta_type)) {
+      throw_formatted("Fail parse `{}` in `{}`", "meta_type", name_type_v<T>);
+    }
+    emplace_meta<T>(meta_type, out);
+
+    auto v = [&]<typename Info, typename Field>(Field& out) {
+      std::size_t index = Info::index;
+      std::string_view name = Info::name.AsStringView();
+      auto col = statement.getColumn(index);
+      TGBM_ON_DEBUG(
+          details::check_column_all<Field>(statement.getQuery(), col, index, name));
+      if (!parser_column<Field>::parse(col, out)) {
+        throw_formatted("Fail parse `{}` in `{}`", name, name_type_v<T>);
+      }
+    };
+    visit_object_with_meta(out, v);
     return out;
   }
 };

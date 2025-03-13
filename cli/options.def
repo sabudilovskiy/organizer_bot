@@ -1,4 +1,5 @@
-TAG(print_config, "Print the parameters used from the config (including those substituted from standard values).")
+TAG(print_config, "Print the parameters used from the config (including those substituted from default values).")
+TAG(generate_config, "Generate config file with default values")
 STRING(config_path, "Path to bot config", default("config.json"))
 
 ALIAS(h, help)

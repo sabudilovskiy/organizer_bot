@@ -68,7 +68,10 @@ struct Database {
       throw std::runtime_error("missmatch types in database");
   }
 
-  template <typename T>
+  template <tgbm::aggregate T>
+  void check_table(bool& failed);
+
+  template <aggregate_with_meta T>
   void check_table(bool& failed);
 
  protected:
@@ -118,16 +121,11 @@ Database<Tables...>::Database(const std::string& dbPath, const auto& migrations)
   check_all_tables();
 }
 
-template <typename... Tables>
-template <typename T>
-void Database<Tables...>::check_table(bool& failed) {
-  std::string db_name(T::db_name);
-  auto db_columns = get_info(db_name);
-  std::vector<std::string_view> exp_names = []() {
-    auto names = boost::pfr::names_as_array<T>();
-    std::vector<std::string_view> out(names.begin(), names.end());
-    return out;
-  }();
+inline void check_table_erased(bool& failed, std::string_view db_name,
+                               const std::vector<PragmaInfo>& db_columns,
+                               const std::vector<std::string_view>& exp_names,
+                               const std::vector<PragmaInfo>& expected_columns) {
+  assert(exp_names.size() == expected_columns.size());
   std::vector<std::string_view> got_names = [&]() {
     std::vector<std::string_view> out;
     for (auto& col : db_columns) {
@@ -145,31 +143,64 @@ void Database<Tables...>::check_table(bool& failed) {
 
   auto str_notnull = [](bool b) { return b ? "notnull" : "nullable"; };
 
-  pfr_extension::visit_struct<T>([&]<typename Info, typename F>() {
-    std::string name = std::string(Info::name.AsStringView());
-    std::size_t index = Info::index;
-    const auto& db_col = db_columns[index];
-    sql::native_type exp_type = sql::parser_column<F>::nt;
-    bool exp_notnull = !sql::parser_column<F>::is_null;
-    // clang-format off
-  if (
-    db_col.type != exp_type || 
-    db_col.notnull != exp_notnull
-  )
-  {
-    TGBM_LOG_CRIT(
-        "Mismatch in table {} in {} column '{}'. "
-        "Expected ({}, {}) "
-        "Got({}, {})",
-        db_name, index, name, 
-        exp_type, str_notnull(exp_notnull), 
-        db_col.type, str_notnull(db_col.notnull));
-    failed = true;
+  for (std::size_t i = 0; i < expected_columns.size(); i++) {
+    auto& exp_col = expected_columns[i];
+    std::string name = exp_col.name;
+    const auto& db_col = db_columns[i];
+    sql::native_type exp_type = exp_col.type;
+    bool exp_notnull = exp_col.notnull;
+    if (db_col.type != exp_type || db_col.notnull != exp_notnull) {
+      TGBM_LOG_CRIT(
+          "Mismatch in table {} in {} column '{}'. "
+          "Expected ({}, {}) "
+          "Got({}, {})",
+          db_name, i, name, exp_type, str_notnull(exp_notnull), db_col.type,
+          str_notnull(db_col.notnull));
+      failed = true;
+    }
   }
-    // clang-format on
+}
 
-    ++index;
+template <typename... Tables>
+template <tgbm::aggregate T>
+void Database<Tables...>::check_table(bool& failed) {
+  std::string db_name(T::db_name);
+  auto db_columns = get_info(db_name);
+  std::vector<std::string_view> expected_names;
+  std::vector<PragmaInfo> expected_columns;
+
+  pfr_extension::visit_struct<T>([&]<typename Info, typename Field>() {
+    std::string_view name = Info::name.AsStringView();
+    expected_names.emplace_back(name);
+    expected_columns.emplace_back(PragmaInfo{
+        .name = (std::string)name,
+        .type = sql::parser_column<Field>::nt,
+        .notnull = !sql::parser_column<Field>::is_null,
+    });
   });
+
+  check_table_erased(failed, db_name, db_columns, expected_names, expected_columns);
+}
+
+template <typename... Tables>
+template <aggregate_with_meta T>
+void Database<Tables...>::check_table(bool& failed) {
+  std::string db_name(T::db_name);
+  auto db_columns = get_info(db_name);
+  std::vector<std::string_view> expected_names;
+  std::vector<PragmaInfo> expected_columns;
+
+  visit_struct_with_meta<T>([&]<typename Info, typename Field>() {
+    std::string_view name = Info::name.AsStringView();
+    expected_names.emplace_back(name);
+    expected_columns.emplace_back(PragmaInfo{
+        .name = (std::string)name,
+        .type = sql::parser_column<Field>::nt,
+        .notnull = !sql::parser_column<Field>::is_null,
+    });
+  });
+
+  check_table_erased(failed, db_name, db_columns, expected_names, expected_columns);
 }
 
 }  // namespace bot

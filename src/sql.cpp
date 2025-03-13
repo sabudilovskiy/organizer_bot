@@ -75,23 +75,6 @@ bool parser_column<ts_t>::parse(const SQLite::Column& col, ts_t& out) {
   return parse_ts(col.getString(), out);
 }
 
-bool parser_column<io_event_meta>::parse(const SQLite::Column& col, io_event_meta& out) {
-  if (!col.isText()) {
-    return false;
-  }
-  out = from_json_str<io_event_meta>(col.getString());
-  return true;
-}
-
-bool parser_column<time_event_meta>::parse(const SQLite::Column& col,
-                                           time_event_meta& out) {
-  if (!col.isText()) {
-    return false;
-  }
-  out = from_json_str<time_event_meta>(col.getString());
-  return true;
-}
-
 bool parser_column<native_type>::parse(const SQLite::Column& col, native_type& out) {
   if (!col.isText()) {
     return false;

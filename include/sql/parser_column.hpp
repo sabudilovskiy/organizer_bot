@@ -34,6 +34,8 @@ parser_column_decl(native_type, text, false);
 parser_column_decl(time_event_meta, text, false);
 parser_column_decl(ts_t, text, false);
 
+#undef parser_column_decl
+
 template <typename T>
   requires std::is_aggregate_v<T>
 struct parser_column<T> {
@@ -104,7 +106,5 @@ struct parser_column<tgbm::api::optional<T>> {
     return true;
   }
 };
-
-#undef parser_column_decl
 
 }  // namespace bot::sql

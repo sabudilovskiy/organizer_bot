@@ -36,6 +36,9 @@ struct io_event {
   bool consumed = false;
 
   static constexpr std::string_view db_name = "io_events";
+  using meta_type = io_event_type;
+
+  io_event_type type() const;
 
   cb_query_meta_t& cb_query_meta();
   const cb_query_meta_t& cb_query_meta() const;
@@ -47,10 +50,6 @@ struct io_event {
   const message_meta_t& message_meta() const;
 };
 
-template <>
-struct json_reader<io_event_meta> : json_reader_meta<io_event_meta, io_event_type> {};
-
-template <>
-struct json_writer<io_event_meta> : json_writer_meta<io_event_meta, io_event_type> {};
+static_assert(aggregate_with_meta<io_event>);
 
 }  // namespace bot

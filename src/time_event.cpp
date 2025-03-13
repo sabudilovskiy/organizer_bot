@@ -18,7 +18,7 @@ const reminder_call_meta_t& time_event::reminder_call_meta() const {
   return std::get<reminder_call_meta_t>(meta);
 }
 
-time_event_type time_event::type() {
+time_event_type time_event::type() const {
   return (time_event_type)meta.index();
 }
 

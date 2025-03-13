@@ -43,11 +43,13 @@ const std::string q_update_user =
     "user_id = ?";
 
 const std::string q_add_io_event =
-    "INSERT INTO io_events (ts, user_id, meta, consumed) VALUES (?, ?, ?, 0) RETURNING "
-    "io_event_id";
+    "INSERT INTO io_events "
+    "(ts, user_id, meta, consumed, meta_type) VALUES (?, ?, ?, 0, ?) "
+    "RETURNING io_event_id";
 
 const std::string q_select_io_events =
-    "SELECT io_event_id, user_id, ts, meta, consumed FROM io_events where consumed = 0 "
+    "SELECT io_event_id, user_id, ts, meta, consumed, meta_type FROM io_events where "
+    "consumed = 0 "
     "ORDER BY ts ASC, "
     "user_id ASC";
 
@@ -63,7 +65,7 @@ const std::string q_get_calls =
 
 const std::string q_get_time_events = R"(
 SELECT 
-  time_event_id, next_occurence, meta, consumed FROM time_events 
+  time_event_id, next_occurence, meta, consumed, meta_type FROM time_events 
 WHERE 
   consumed = 0 AND 
   next_occurence < ? 
@@ -72,8 +74,9 @@ ORDER BY
 )";
 
 const std::string q_add_time_event =
-    "INSERT INTO time_events (next_occurence, meta, consumed) VALUES (?,?,?) RETURNING "
-    "time_event_id";
+    "INSERT INTO time_events "
+    "(next_occurence, meta, consumed, meta_type) VALUES (?,?,?,?) "
+    " RETURNING time_event_id";
 
 constexpr char q_consume_time_events[] =
     "UPDATE time_events SET consumed = 1 WHERE time_event_id IN ({})";
@@ -138,7 +141,7 @@ std::vector<io_event> OrganizerDB::getEvents() {
 }
 
 std::int64_t OrganizerDB::addEvent(const io_event& e) {
-  return execute<int64_t>(q_add_io_event, e.ts, e.user_id, e.meta);
+  return execute<int64_t>(q_add_io_event, e.ts, e.user_id, e.meta, e.type());
 }
 
 void OrganizerDB::consumeEvents(const std::vector<int64_t>& event_ids) {
@@ -161,7 +164,7 @@ std::vector<Call> OrganizerDB::getCalls(std::int64_t user_id) {
 
 std::int64_t OrganizerDB::addTimeEvent(const time_event& event) {
   return execute<int64_t>(q_add_time_event, event.next_occurence, event.meta,
-                          event.consumed);
+                          event.consumed, event.type());
 }
 
 void OrganizerDB::consumeTimeEvents(const std::vector<int64_t>& event_ids) {

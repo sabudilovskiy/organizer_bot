@@ -10,6 +10,9 @@
 
 namespace bot {
 
+std::string pretty_serialize(const boost::json::value& value,
+                             std::string_view indent = "\t");
+
 struct json_value;
 
 template <>
@@ -50,6 +53,10 @@ struct json_value {
 
   std::string serialize() const {
     return boost::json::serialize(value);
+  }
+
+  std::string pretty_serialize(std::string_view indent = "\t") const {
+    return ::bot::pretty_serialize(value, indent);
   }
 
   template <typename T>

@@ -146,11 +146,20 @@ constexpr auto array_cat(const std::array<Type, sizes>&... arrays) {
   return result;
 }
 
+template <typename T>
+constexpr std::array<std::string_view, pfr_extension::tuple_size_v<T>> names_as_array_v =
+    []() {
+      if constexpr (boost::pfr::tuple_size_v<T> != 0) {
+        return boost::pfr::names_as_array<std::remove_cvref_t<T>>();
+      } else
+        return std::array<std::string_view, 0>{};
+    }();
+
 template <typename... T>
 struct set_of_names {
   static constexpr auto value = []() {
     constexpr auto result_with_nulls_with_size = []() {
-      auto all_names = array_cat(boost::pfr::names_as_array<std::remove_cvref_t<T>>()...);
+      auto all_names = array_cat(names_as_array_v<std::remove_cvref_t<T>>...);
       std::sort(all_names.begin(), all_names.end());
       auto size = std::unique(all_names.begin(), all_names.end()) - all_names.begin();
       return std::make_pair(all_names, size);

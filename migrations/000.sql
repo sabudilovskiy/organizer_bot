@@ -26,6 +26,7 @@ CREATE TABLE io_events (
 
 CREATE TABLE time_events (
     time_event_id  INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,
+    user_id        INTEGER                                     ,
     next_occurence TEXT                                NOT NULL,
     meta           TEXT                                NOT NULL,
     consumed       INTEGER                             NOT NULL,

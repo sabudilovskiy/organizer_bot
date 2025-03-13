@@ -34,16 +34,16 @@ struct User {
   int64_t additional_messages = 0;
   int64_t gmt_offset_m = 90;
 
-  bool need_new_message() {
-    return additional_messages >= max_additional_messages;
-  }
+  bool need_new_message();
 
-  void set_need_new_message() {
-    additional_messages = max_additional_messages;
-  }
+  void set_need_new_message();
 
   static constexpr std::string_view db_name = "users";
   static constexpr int64_t max_additional_messages = 1;
+
+  ts_t convert_from_user_time(ts_t time);
+
+  ts_t convet_to_user_time(ts_t time);
 };
 
 struct Call {

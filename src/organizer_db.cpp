@@ -65,7 +65,7 @@ const std::string q_get_calls =
 
 const std::string q_get_time_events = R"(
 SELECT 
-  time_event_id, next_occurence, meta, consumed, meta_type FROM time_events 
+  time_event_id, user_id, next_occurence, meta, consumed, meta_type FROM time_events 
 WHERE 
   consumed = 0 AND 
   next_occurence < ? 
@@ -75,7 +75,7 @@ ORDER BY
 
 const std::string q_add_time_event =
     "INSERT INTO time_events "
-    "(next_occurence, meta, consumed, meta_type) VALUES (?,?,?,?) "
+    "(user_id, next_occurence, meta, consumed, meta_type) VALUES (?,?,?,?,?) "
     " RETURNING time_event_id";
 
 constexpr char q_consume_time_events[] =

@@ -10,20 +10,18 @@ enum struct time_event_type {
 };
 
 struct reminder_all_calls_meta_t {
-  int64_t user_id;
+  std::vector<time_of_day> time_points;
 };
 
 struct reminder_call_meta_t {
-  int64_t user_id;
   int64_t call_id;
 };
 
 using time_event_meta = std::variant<reminder_all_calls_meta_t, reminder_call_meta_t>;
 
-static_assert(magic_enum::enum_names<time_event_type>() == meta_names_v<time_event_meta>);
-
 struct time_event {
   int64_t time_event_id;
+  tgbm::api::optional<int64_t> user_id;
   ts_t next_occurence;
   time_event_meta meta;
   bool consumed;
@@ -39,7 +37,5 @@ struct time_event {
 
   time_event_type type() const;
 };
-
-static_assert(aggregate_with_meta<time_event>);
 
 }  // namespace bot

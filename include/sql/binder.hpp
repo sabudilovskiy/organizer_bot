@@ -69,14 +69,26 @@ struct binder<ts_t> {
 };
 
 template <typename T>
-  requires std::is_aggregate_v<T>
+  requires tgbm::aggregate<T>
 struct binder<as_sequence<T>> {
   static void bind(SQLite::Statement& statement, const as_sequence<T>& arg,
                    std::size_t& cur_index) {
-    auto v = [&]<typename Field>(const Field& field, std::size_t i) mutable {
+    auto v = [&]<typename Field>(const Field& field) mutable {
       binder<Field>::bind(statement, field, cur_index);
     };
     boost::pfr::for_each_field(arg.t, v);
+  }
+};
+
+template <typename T>
+  requires aggregate_with_meta<T>
+struct binder<as_sequence<T>> {
+  static void bind(SQLite::Statement& statement, const as_sequence<T>& arg,
+                   std::size_t& cur_index) {
+    auto v = [&]<typename Info, typename Field>(const Field& field) mutable {
+      binder<Field>::bind(statement, field, cur_index);
+    };
+    visit_object_with_meta(arg.t, v);
   }
 };
 

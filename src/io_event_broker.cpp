@@ -92,8 +92,10 @@ void io_event_broker::save() {
   }
   if (!consumed_events.empty()) {
     db_.consumeEvents(consumed_events);
+    TGBM_LOG_INFO("Saved consumed {} io_events", consumed_events.size());
+  } else {
+    TGBM_LOG_DEBUG("Saved consumed 0 io_events");
   }
-  TGBM_LOG_INFO("Saved consumed {} io_events", consumed_events.size());
 }
 
 dd::task<void> io_event_broker::safe_process_update(tgbm::api::Update update) noexcept {

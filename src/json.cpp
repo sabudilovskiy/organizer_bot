@@ -2,6 +2,71 @@
 
 namespace bot {
 
+namespace {
+
+std::string serialize_value(const boost::json::value& jv, std::string_view indent,
+                            int quantity);
+
+std::string serialize_object(const boost::json::object& obj, std::string_view indent,
+                             int quantity) {
+  if (obj.empty())
+    return "{}";
+
+  std::string result = "{\n";
+  for (auto it = obj.begin(); it != obj.end(); ++it) {
+    result.append(indent.data(), indent.size() * (quantity + 1));
+    result += boost::json::serialize(it->key()) + " : " +
+              serialize_value(it->value(), indent, quantity + 1);
+    if (std::next(it) != obj.end())
+      result += ",\n";
+  }
+  result += "\n";
+  result.append(indent.data(), indent.size() * quantity);
+  result += "}";
+  return result;
+}
+
+std::string serialize_array(const boost::json::array& arr, std::string_view indent,
+                            int quantity) {
+  if (arr.empty())
+    return "[]";
+
+  std::string result = "[\n";
+  for (auto it = arr.begin(); it != arr.end(); ++it) {
+    result.append(indent.data(), indent.size() * (quantity + 1));
+    result += serialize_value(*it, indent, quantity + 1);
+    if (std::next(it) != arr.end())
+      result += ",\n";
+  }
+  result += "\n";
+  result.append(indent.data(), indent.size() * quantity);
+  result += "]";
+  return result;
+}
+
+std::string serialize_value(const boost::json::value& jv, std::string_view indent,
+                            int quantity) {
+  switch (jv.kind()) {
+    case boost::json::kind::object:
+      return serialize_object(jv.get_object(), indent, quantity);
+    case boost::json::kind::array:
+      return serialize_array(jv.get_array(), indent, quantity);
+    case boost::json::kind::string:
+      return boost::json::serialize(jv.get_string());
+    case boost::json::kind::uint64:
+    case boost::json::kind::int64:
+    case boost::json::kind::double_:
+      return boost::json::serialize(jv);
+    case boost::json::kind::bool_:
+      return jv.get_bool() ? "true" : "false";
+    case boost::json::kind::null:
+      return "null";
+  }
+  return "";
+}
+
+}  // namespace
+
 std::string json_reader<std::string>::read(const boost::json::value& v) {
   auto& str = v.as_string();
   return std::string(str.data(), str.size());
@@ -77,6 +142,10 @@ json_value json_value::array() noexcept {
 
 void json_writer<bool>::write(boost::json::value& v, bool b) {
   v = b;
+}
+
+std::string pretty_serialize(const boost::json::value& value, std::string_view indent) {
+  return serialize_value(value, indent, 0);
 }
 
 }  // namespace bot

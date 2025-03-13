@@ -4,6 +4,7 @@
 #include <tgbm/api/optional.hpp>
 #include <tgbm/utils/pfr_extension.hpp>
 
+#include "meta.hpp"
 #include "time.hpp"
 
 namespace bot {
@@ -49,7 +50,7 @@ struct json_writer<tgbm::api::optional<T>> {
 };
 
 template <typename T>
-  requires std::is_aggregate_v<T>
+  requires tgbm::aggregate<T>
 struct json_writer<T> {
   static void write(boost::json::value& v, const T& obj) {
     v = boost::json::object{};
@@ -58,6 +59,26 @@ struct json_writer<T> {
       std::string_view key = Info::name.AsStringView();
       json_writer<F>::write(j_o[key], field);
     });
+  }
+};
+
+template <typename T>
+  requires aggregate_with_meta<T>
+struct json_writer<T> {
+  static void write(boost::json::value& v, const T& obj) {
+    v = boost::json::object{};
+    auto& j_o = v.as_object();
+    visit_object_with_meta(obj, [&]<typename Info, typename F>(const F& field) {
+      std::string_view key = Info::name.AsStringView();
+      json_writer<F>::write(j_o[key], field);
+    });
+  }
+};
+
+template <typename... Ts>
+struct json_writer<std::variant<Ts...>> {
+  static void write(boost::json::value& j, const std::variant<Ts...>& v) {
+    std::visit([&]<typename U>(const U& u) { json_writer<U>::write(j, u); }, v);
   }
 };
 

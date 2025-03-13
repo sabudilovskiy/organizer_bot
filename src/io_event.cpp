@@ -25,4 +25,9 @@ const command_meta_t& io_event::command_meta() const {
 command_meta_t& io_event::command_meta() {
   return std::get<command_meta_t>(meta);
 }
+
+io_event_type io_event::type() const {
+  return (io_event_type)meta.index();
+}
+
 }  // namespace bot

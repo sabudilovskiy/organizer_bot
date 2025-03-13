@@ -14,8 +14,9 @@ struct Config {
   int64_t interval_saving_io_events = 10;
   bool skip_fail_save_db = false;
   bool skip_fail_updates = false;
-};
 
-Config read_config_from_fs(std::string_view path);
+  static Config read_from_fs(std::string_view path);
+  static void write_default_to_fs(std::string_view path);
+};
 
 }  // namespace bot

@@ -33,7 +33,7 @@ Config extract_config(OptConfig readed_cfg) {
   return res;
 }
 
-Config read_config_from_fs(std::string_view path) {
+Config Config::read_from_fs(std::string_view path) {
   std::ifstream file(std::string{path});
   if (!file.is_open()) {
     throw_formatted("Fail read config from: {}", path);
@@ -53,6 +53,14 @@ Config read_config_from_fs(std::string_view path) {
     throw_formatted("In config '{}' missing token", path);
   }
   return res;
+}
+
+void Config::write_default_to_fs(std::string_view path) {
+  std::ofstream file(std::string{path});
+  if (!file.is_open()) {
+    throw_formatted("Fail write config to: '{}'", path);
+  }
+  file << json_value(Config{}).pretty_serialize();
 }
 
 }  // namespace bot

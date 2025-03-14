@@ -37,4 +37,5 @@ time_of_day Call::begin() const noexcept {
 time_of_day Call::end() const noexcept {
   return schedule.time + std::chrono::minutes(duration);
 }
+
 }  // namespace bot

@@ -15,6 +15,9 @@ struct as_sequence {
 };
 
 template <typename T>
+as_sequence(T) -> as_sequence<T>;
+
+template <typename T>
 struct binder {};
 
 template <>

@@ -92,11 +92,11 @@ dd::task<void> App::executing_time_events() {
 App::App(Config config)
     : bot(config.token),
       db(config.db_path),
-      io_ev_broker(bot.api, db),
       time_ev_dispatcher(bot.api, db),
+      io_ev_broker(bot.api, db, time_ev_dispatcher),
       config(std::move(config)) {
-  io_ev_broker.load();
   time_ev_dispatcher.load();
+  io_ev_broker.load();
 }
 
 void App::run() {

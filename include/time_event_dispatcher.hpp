@@ -1,6 +1,7 @@
 #pragma once
 
 #include <queue>
+#include <unordered_set>
 
 #include "consumer.hpp"
 #include "macro.hpp"
@@ -16,12 +17,11 @@ struct time_event_dispatcher {
     return lhs.next_occurence > rhs.next_occurence;
   });
 
-  ts_t next_occurenece() {
-    if (queue.empty()) {
-      return std::chrono::local_time<std::chrono::nanoseconds>::max();
-    }
-    return queue.top().next_occurence;
-  }
+  const time_event* top();
+
+  ts_t next_occurenece();
+
+  void consume(std::int64_t event_id);
 
   time_event_dispatcher(const tgbm::api::telegram& api, OrganizerDB& db) noexcept
       : api(api), db(db) {
@@ -31,17 +31,7 @@ struct time_event_dispatcher {
 
   consumer_t handle(time_event event);
 
-  consumer_t execute() {
-    auto now_v = now();
-    while (!queue.empty() &&
-           queue.top().next_occurence - now_v >= std::chrono::seconds(1)) {
-      auto e = queue.top();
-      queue.pop();
-      auto id = e.time_event_id;
-      AWAIT_ALL(handle(std::move(e)));
-      consumed_events.push_back(id);
-    }
-  }
+  consumer_t execute();
 
   void push(time_event event);
 
@@ -51,7 +41,7 @@ struct time_event_dispatcher {
   const tgbm::api::telegram& api;
   OrganizerDB& db;
   std::priority_queue<time_event, std::vector<time_event>, next_occur_comp> queue;
-  std::vector<int64_t> consumed_events;
+  std::unordered_set<int64_t> consumed_events;
 };
 
 }  // namespace bot

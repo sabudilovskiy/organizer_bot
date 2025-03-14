@@ -169,6 +169,8 @@ void visit_object_with_meta(const T& t, auto&& functor) {
 
 template <typename T>
 void visit_meta(std::optional<meta_type_t<T>> e, auto&& functor) {
+  static_assert(magic_enum::enum_names<meta_type_t<T>>() ==
+                meta_names_v<meta_value_t<T>>);
   if (!e) {
     functor.template operator()<missing>();
   }
@@ -180,6 +182,8 @@ void visit_meta(std::optional<meta_type_t<T>> e, auto&& functor) {
 
 template <typename T>
 void visit_meta(meta_type_t<T> e, auto&& functor) {
+  static_assert(magic_enum::enum_names<meta_type_t<T>>() ==
+                meta_names_v<meta_value_t<T>>);
   auto proxy = [&]<std::size_t I>() {
     functor.template operator()<meta_alternative_t<I, T>>();
   };

@@ -16,6 +16,7 @@ constexpr std::uint64_t constexpr_place_hash(std::string_view file) noexcept {
 }  // namespace bot
 
 #define AWAIT_ALL(X) co_yield dd::elements_of(X)
+
 #define STRINGIFY_IMPL(x) #x
 #define STRINGIFY(x) STRINGIFY_IMPL(x)
 #define FILE_LINE __FILE__ ":" STRINGIFY(__LINE__)

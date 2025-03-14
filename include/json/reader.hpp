@@ -101,6 +101,18 @@ struct json_reader<tgbm::api::optional<T>> {
   }
 };
 
+template <typename T>
+struct json_reader<std::vector<T>> {
+  static std::vector<T> read(const boost::json::value& v) {
+    std::vector<T> out;
+    auto& arr = v.as_array();
+    for (auto& e : arr) {
+      out.emplace_back(json_reader<T>::read(e));
+    }
+    return out;
+  }
+};
+
 template <>
 struct json_reader<weekday> {
   static weekday read(const boost::json::value& v) {

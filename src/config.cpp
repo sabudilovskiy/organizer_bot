@@ -40,7 +40,7 @@ Config Config::read_from_fs(std::string_view path) {
   }
   json_value j(boost::json::parse(file));
   auto fields = []() {
-    auto names = boost::pfr::names_as_array<Config>();
+    auto names = names_as_array_v<Config>;
     return std::unordered_set<std::string_view>(names.begin(), names.end());
   }();
   auto res = extract_config(j.as<OptConfig>());

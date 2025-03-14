@@ -41,6 +41,7 @@ consumer_t call_menu(ContextWithUser ctx) {
         AWAIT_ALL(call_list_menu(ctx));
         break;
       case CallMenu::settings:
+        AWAIT_ALL(call_setting_menu(ctx));
       case CallMenu::export_calendar:
       case CallMenu::mute:
         co_await ctx.send_text("Пока что не реализовано 😔");

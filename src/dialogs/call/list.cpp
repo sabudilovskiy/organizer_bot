@@ -16,13 +16,15 @@ enum struct ListMenu {
   prev_page,
   next_page,
   settings,
+  back,
   to_main_menu,
 };
 
 }  // namespace
 
 consumer_t call_list_menu(ContextWithUser ctx) {
-  auto calls = ctx.db.getCalls(ctx.user_id);
+  using E = ListMenu;
+  auto calls = ctx.db.getCalls(ctx.user.user_id);
 
   if (calls.empty()) {
     co_await ctx.send_text(
@@ -48,32 +50,37 @@ consumer_t call_list_menu(ContextWithUser ctx) {
                            call.schedule.time, human_frequence(call.schedule.frequence)),
                ListMenu(idx));
     }
-    menu.add("⬅️ Предыдущая страница", ListMenu::prev_page);
-    menu.add("➡️ Следующая страница", ListMenu::next_page);
-    menu.add("⚙️ Настройки", ListMenu::settings);
-    menu.add("🏠 Главное меню", ListMenu::to_main_menu);
+    menu.add("⬅️ Предыдущая страница", E::prev_page);
+    menu.add("➡️ Следующая страница", E::next_page);
+    menu.add("⚙️ Настройки", E::settings);
+    menu.add("🔙 Назад ", E::back);
+    menu.add("🏠 Главное меню", E::to_main_menu);
 
     ListMenu choosed;
     AWAIT_ALL(menu.show(ctx, choosed));
     switch (choosed) {
-      case ListMenu::first:
-      case ListMenu::second:
-      case ListMenu::third:
-      case ListMenu::fourth:
-      case ListMenu::fifth:
+      case E::first:
+      case E::second:
+      case E::third:
+      case E::fourth:
+      case E::fifth:
         co_await ctx.send_text("Пока что не реализовано 😔");
-      case ListMenu::prev_page:
+        break;
+      case E::prev_page:
         cur_page = std::max<std::size_t>(cur_page, 1) - 1;
         break;
-      case ListMenu::next_page:
+      case E::next_page:
         cur_page = std::min(cur_page + 1, pages);
         break;
-      case ListMenu::settings:
-        co_await ctx.send_text("Пока что не реализовано 😔");
-      case ListMenu::to_main_menu:
+      case E::settings:
+        AWAIT_ALL(call_list_menu(ctx));
+        break;
+      case E::back:
+        co_return;
+      case E::to_main_menu:
         ctx.to_main_menu();
         co_yield {};
-        co_return;
+        break;
     }
   }
 }

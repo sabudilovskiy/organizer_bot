@@ -13,7 +13,7 @@
 
 namespace bot {
 
-template <typename T>
+template <typename T = std::size_t>
 struct Menu {
   using Button = tgbm::api::InlineKeyboardButton;
   using Markup = tgbm::api::InlineKeyboardMarkup;

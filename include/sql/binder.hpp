@@ -15,6 +15,9 @@ struct as_sequence {
 };
 
 template <typename T>
+as_sequence(T) -> as_sequence<T>;
+
+template <typename T>
 struct binder {};
 
 template <>
@@ -92,10 +95,11 @@ struct binder<as_sequence<T>> {
   }
 };
 
-template <typename T>
-struct binder<as_sequence<std::vector<T>>> {
-  static void bind(SQLite::Statement& statement, const as_sequence<std::vector<T>>& arg,
+template <std::ranges::range R>
+struct binder<as_sequence<R>> {
+  static void bind(SQLite::Statement& statement, const as_sequence<R>& arg,
                    std::size_t& cur_index) {
+    using T = std::ranges::range_value_t<R>;
     for (auto& t : arg.t) {
       binder<T>::bind(statement, t, cur_index);
     }

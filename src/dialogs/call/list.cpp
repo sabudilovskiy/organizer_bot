@@ -22,7 +22,7 @@ enum struct ListMenu {
 }  // namespace
 
 consumer_t call_list_menu(ContextWithUser ctx) {
-  auto calls = ctx.db.getCalls(ctx.user_id);
+  auto calls = ctx.db.getCalls(ctx.user.user_id);
 
   if (calls.empty()) {
     co_await ctx.send_text(

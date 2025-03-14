@@ -25,8 +25,8 @@ struct App {
  private:
   tgbm::bot bot;
   OrganizerDB db;
-  io_event_broker io_ev_broker;
   time_event_dispatcher time_ev_dispatcher;
+  io_event_broker io_ev_broker;
   Config config;
 };
 }  // namespace bot

@@ -11,8 +11,11 @@
 
 namespace bot {
 
+struct time_event_dispatcher;
+
 struct io_event_broker {
-  io_event_broker(const tgbm::api::telegram& api, OrganizerDB& db) noexcept;
+  io_event_broker(const tgbm::api::telegram& api, OrganizerDB& db,
+                  time_event_dispatcher& time_event_dispatcher) noexcept;
 
   void add_deferred_event(io_event event);
 
@@ -35,6 +38,8 @@ struct io_event_broker {
  private:
   OrganizerDB& db_;
   const tgbm::api::telegram& api_;
+  time_event_dispatcher& time_event_dispatcher_;
+
   std::map<std::int64_t, std::vector<io_event>> events_;
   std::unordered_map<std::int64_t, consumer_t> consumers_;
   std::vector<io_event> deferred_events_;

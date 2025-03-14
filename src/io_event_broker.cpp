@@ -49,8 +49,9 @@ dd::task<tgbm::api::optional<io_event>> generate_event(tgbm::api::Update u,
 }
 }  // namespace
 
-io_event_broker::io_event_broker(const tgbm::api::telegram& api, OrganizerDB& db) noexcept
-    : api_(api), db_(db) {
+io_event_broker::io_event_broker(const tgbm::api::telegram& api, OrganizerDB& db,
+                                 time_event_dispatcher& time_event_dispatcher) noexcept
+    : api_(api), db_(db), time_event_dispatcher_(time_event_dispatcher) {
 }
 
 dd::task<void> io_event_broker::process_update(tgbm::api::Update update) {
@@ -127,21 +128,23 @@ dd::task<void> io_event_broker::process_event(io_event event) {
             .db = db_,
             .api = api_,
             .event_broker = *this,
+            .time_event_dispatcher = time_event_dispatcher_,
             .events = user_events,
-            .user_id = event.user_id,
         },
         std::move(user));
   }
   (void)co_await user_consumer.begin();
 
   if (user_consumer.empty()) {
-    user_consumer = main_menu(Context{
-        .db = db_,
-        .api = api_,
-        .event_broker = *this,
-        .events = user_events,
-        .user_id = event.user_id,
-    });
+    user_consumer = main_menu(
+        Context{
+            .db = db_,
+            .api = api_,
+            .event_broker = *this,
+            .time_event_dispatcher = time_event_dispatcher_,
+            .events = user_events,
+        },
+        event.user_id);
   }
 
   (void)co_await user_consumer.begin();
@@ -164,12 +167,13 @@ dd::task<void> io_event_broker::process_old_events() {
               .db = db_,
               .api = api_,
               .event_broker = *this,
+              .time_event_dispatcher = time_event_dispatcher_,
               .events = user_events,
-              .user_id = user_id,
           },
           std::move(user));
     }
     (void)co_await user_consumer.begin();
   }
 }
+
 }  // namespace bot

@@ -123,4 +123,73 @@ std::string_view human_frequence(schedule_frequence freq) noexcept {
   tgbm::unreachable();
 }
 
+state_today schedule_unit::get_state_today(ts_t now) const {
+  auto today = std::chrono::floor<std::chrono::days>(now);
+  auto start_day = std::chrono::floor<std::chrono::days>(start_date);
+
+  if (weekday{today} != wd) {
+    return state_today::other_day;
+  }
+
+  switch (frequence) {
+    case schedule_frequence::one_time:
+      if (start_day != today)
+        return state_today::other_day;
+      break;
+
+    case schedule_frequence::weekly:
+      if (start_day > today)
+        return state_today::other_day;
+      break;
+
+    case schedule_frequence::biweekly:
+      if (start_day > today ||
+          (std::chrono::duration_cast<std::chrono::days>(today - start_day).count() %
+               14 !=
+           0)) {
+        return state_today::other_day;
+      }
+      break;
+  }
+
+  auto now_time = time_of_day::from_ts(now);
+  if (now_time > time) {
+    return state_today::past;
+  }
+
+  return state_today::upcoming;
+}
+
+time_of_day time_of_day::from_ts(ts_t ts) {
+  auto now_time = std::chrono::hh_mm_ss<std::chrono::nanoseconds>(ts.time_since_epoch());
+
+  return time_of_day{
+      .hour = now_time.hours().count(),
+      .minute = now_time.minutes().count(),
+  };
+}
+
+time_of_day time_of_day::operator+(std::chrono::minutes duration) const {
+  time_of_day result = *this;
+  result.minute += duration.count();
+
+  if (result.minute >= 60) {
+    result.hour += result.minute / 60;
+    result.minute %= 60;
+  }
+
+  if (result.hour >= 24) {
+    result.hour %= 24;
+  }
+
+  return result;
+}
+
+std::chrono::minutes time_of_day::operator-(const time_of_day& rhs) const {
+  const auto& lhs = *this;
+  int lhs_total_minutes = lhs.hour * 60 + lhs.minute;
+  int rhs_total_minutes = rhs.hour * 60 + rhs.minute;
+  return std::chrono::minutes{lhs_total_minutes - rhs_total_minutes};
+}
+
 }  // namespace bot

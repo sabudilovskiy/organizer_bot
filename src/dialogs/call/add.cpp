@@ -24,29 +24,24 @@ consumer_t weekday_input(ContextWithUser ctx, weekday& out) {
   ctx.set_need_new_message();
 }
 
-consumer_t time_of_day_input(ContextWithUser ctx, time_of_day& out) {
-  out = time_of_day{-1, -1};
+consumer_t begin_input(ContextWithUser ctx, time_of_day& out) {
+  AWAIT_ALL(ctx.read_time(
+      "⏰ «Введите время начала созвона в формате ЧЧ:ММ (например, 15:30):", out));
+}
+
+consumer_t duration_input(ContextWithUser ctx, int64_t& out) {
+  time_of_day end = time_of_day{-1, -1};
   std::string input;
-  AWAIT_ALL(ctx.read_text(
-      "⏰ «Введите время начала созвона в формате ЧЧ:ММ (например, 15:30):", input));
-  auto result = scn::scan<int, int>(input, "{:d}:{:d}");
-  bool failed = !result.has_value();
-  if (!failed) {
-    auto [h, m] = result->values();
-    out = time_of_day{h, m};
-  }
-  while (!out.is_valid()) {
+  AWAIT_ALL(ctx.read_text("⏰ «Введите длительность созвона в минутах:", input));
+  auto result = scn::scan<std::int8_t>(input, "{:d}");
+  while (!result.has_value()) {
     AWAIT_ALL(ctx.read_text(
-        "⚠️ Ошибка ввода! Время должно быть в формате ЧЧ:ММ (например, 15:30)."
-        "🔄 Попробуйте ещё раз и введите время в правильном формате: ",
+        R"(⚠️ Ошибка ввода! Длительность созвона должна быть положительным числом.
+🔄 Попробуйте ещё раз и введите длительность в правильном формате: )",
         input));
-    result = scn::scan<int, int>(input, "{:d}:{:d}");
-    failed = !result.has_value();
-    if (!failed) {
-      auto [h, m] = result->values();
-      out = time_of_day{h, m};
-    }
+    result = scn::scan<std::int8_t>(input, "{:d}");
   }
+  out = result->value();
 }
 
 consumer_t start_date(ContextWithUser ctx, ts_t& out) {
@@ -79,7 +74,7 @@ consumer_t schedule_frequence_input(ContextWithUser ctx, schedule_frequence& out
 
 consumer_t call_add_menu(ContextWithUser ctx) {
   Call call;
-  call.user_id = ctx.user_id;
+  call.user_id = ctx.user.user_id;
   AWAIT_ALL(ctx.read_text(
       "📌 Введите название созвона. Оно поможет вам быстро ориентироваться в расписании.",
       call.name));
@@ -91,6 +86,9 @@ consumer_t call_add_menu(ContextWithUser ctx) {
                     call.description));
   if (call.description == "-")
     call.description = "";
+
+  AWAIT_ALL(duration_input(ctx, call.duration));
+
   std::vector<schedule_unit> schedule_units;
   co_await ctx.send_text(
       "🕒 Теперь настроим расписание для созвона. Можно добавить несколько вариантов, "
@@ -100,7 +98,7 @@ consumer_t call_add_menu(ContextWithUser ctx) {
   for (;;) {
     schedule_unit su;
     AWAIT_ALL(weekday_input(ctx, su.wd));
-    AWAIT_ALL(time_of_day_input(ctx, su.time));
+    AWAIT_ALL(begin_input(ctx, su.time));
     AWAIT_ALL(schedule_frequence_input(ctx, su.frequence));
     AWAIT_ALL(start_date(ctx, su.start_date));
 

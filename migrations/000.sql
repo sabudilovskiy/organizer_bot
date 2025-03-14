@@ -3,7 +3,7 @@ CREATE TABLE users (
     chat_id             INTEGER                    NOT NULL,
     message_id          INTEGER                            ,
     additional_messages INTEGER                    NOT NULL,
-    gmt_offset_m        INTEGER                    NOT NULL
+    settings            TEXT                       NOT NULL
 );
 
 CREATE TABLE tasks (
@@ -38,5 +38,6 @@ CREATE TABLE calls (
     user_id     INTEGER                           NOT NULL,
     name        TEXT                              NOT NULL,
     description TEXT                              NOT NULL,
+    duration    INTEGER                           NOT NULL,
     schedule    TEXT                              NOT NULL
 );

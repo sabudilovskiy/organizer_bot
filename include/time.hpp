@@ -47,6 +47,21 @@ struct time_of_day {
   static bool is_valid(std::int64_t hour, std::int64_t minute) noexcept {
     return 0 <= hour && hour <= 23 && 0 <= minute && minute <= 59;
   }
+
+  static time_of_day from_ts(ts_t ts);
+
+  time_of_day operator+(std::chrono::minutes duration) const;
+
+  std::chrono::minutes operator-(const time_of_day& rhs) const;
+
+  auto operator<=>(const time_of_day& rhs) const = default;
+};
+
+enum struct state_today {
+  past,
+  active,
+  upcoming,
+  other_day,
 };
 
 struct schedule_unit {
@@ -54,6 +69,8 @@ struct schedule_unit {
   time_of_day time;
   schedule_frequence frequence;
   ts_t start_date;
+
+  state_today get_state_today(ts_t now) const;
 };
 
 std::string_view human_frequence(schedule_frequence freq) noexcept;

@@ -67,7 +67,6 @@ const std::string q_get_calls =
 
 const std::string q_get_time_events = R"(
 SELECT 
-  time_event_id, user_id, next_occurence, meta, consumed, meta_type FROM time_events 
 WHERE 
   consumed = 0 AND 
   next_occurence < ? 

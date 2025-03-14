@@ -21,10 +21,10 @@ enum struct DailyNotifyMenu {
 };
 
 time_event get_user_all_notify(ContextWithUser ctx) {
-  auto time_events =
-      ctx.db.getTimeEventsByType(ts_t::max(), time_event_type::reminder_all_calls);
+  auto time_events = ctx.db.getUserTimeEventsByType(ctx.user.user_id,
+                                                    time_event_type::reminder_all_calls);
 
-  assert(time_events.size() == 0);
+  assert(time_events.size() != 0);
   auto& tps = time_events.front().reminder_all_calls_meta().time_points;
   std::sort(tps.begin(), tps.end());
 
@@ -51,15 +51,24 @@ consumer_t edit_notify_point(ContextWithUser ctx, std::vector<time_of_day>& tps,
   }
 }
 
+consumer_t add_notify_point(ContextWithUser ctx, std::vector<time_of_day>& tps) {
+  time_of_day td;
+  AWAIT_ALL(ctx.read_time("Введите время нового уведомления (чч:мм):", td));
+  co_await ctx.send_text("✅ Новое уведомление добавлено!");
+  tps.emplace_back(td);
+  std::sort(tps.begin(), tps.end());
+}
+
 consumer_t daily_notify_settings(ContextWithUser ctx) {
+  time_event te = get_user_all_notify(ctx);
+  auto& notify_times = te.reminder_all_calls_meta().time_points;
   for (;;) {
-    auto te = get_user_all_notify(ctx);
-    auto& notify_times = te.reminder_all_calls_meta().time_points;
-    auto idx_save = notify_times.size();
+    auto idx_add = notify_times.size();
+    auto idx_save = idx_add + 1;
     auto idx_back = idx_save + 1;
     auto idx_main = idx_back + 1;
 
-    std::string menu_text = "⏰ **Ежедневные уведомления**\n";
+    std::string menu_text = "⏰ Ежедневные уведомления\n";
     if (notify_times.empty()) {
       menu_text += "❌ У вас пока нет настроенных уведомлений.\n";
     } else {
@@ -70,13 +79,16 @@ consumer_t daily_notify_settings(ContextWithUser ctx) {
     for (std::size_t i = 0; auto& notify : notify_times) {
       menu.add(fmt::format("{}", notify), i++);
     }
+    menu.add("🕒 Добавить уведомление", idx_add);
     menu.add("💾 Сохранить", idx_save);
     menu.add("🔙 Назад ", idx_back);
     menu.add("🏠 Главное меню ", idx_main);
     std::size_t choosed;
     AWAIT_ALL(menu.show(ctx, choosed));
-    if (0 <= choosed && choosed < idx_save) {
+    if (0 <= choosed && choosed < notify_times.size()) {
       AWAIT_ALL(edit_notify_point(ctx, notify_times, choosed));
+    } else if (choosed == idx_add) {
+      AWAIT_ALL(add_notify_point(ctx, notify_times));
     } else if (choosed == idx_save) {
       ctx.time_event_dispatcher.consume(te.time_event_id);
       ctx.db.addTimeEvent(te);

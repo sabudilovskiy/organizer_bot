@@ -75,12 +75,12 @@ ORDER BY
   next_occurence ASC
 )";
 
-const std::string q_get_time_events_by_type = R"(
+const std::string q_get_user_time_events_by_type = R"(
   SELECT 
     time_event_id, user_id, next_occurence, meta, consumed, meta_type FROM time_events 
   WHERE 
     consumed = 0 AND 
-    next_occurence < ? AND
+    user_id  = ? AND
     meta_type = ?
   ORDER BY 
     next_occurence ASC
@@ -135,7 +135,7 @@ User OrganizerDB::fetchUser(const RequestUser& user) {
     execute<void>(q_insert_user, sql::as_sequence(new_user));
     addTimeEvent(time_event{
         .user_id = user.user_id,
-        .next_occurence = now(),
+        .next_occurence = ts_t::max(),
         .meta = reminder_all_calls_meta_t{.time_points = {}},
     });
     return new_user;
@@ -162,7 +162,7 @@ std::int64_t OrganizerDB::addEvent(const io_event& e) {
   return execute<int64_t>(q_add_io_event, e.ts, e.user_id, e.meta, e.type());
 }
 
-void OrganizerDB::consumeEvents(const std::vector<int64_t>& event_ids) {
+void OrganizerDB::consumeIoEvents(const std::vector<int64_t>& event_ids) {
   if (event_ids.empty()) {
     return;
   }
@@ -181,8 +181,8 @@ std::vector<Call> OrganizerDB::getCalls(std::int64_t user_id) {
 }
 
 std::int64_t OrganizerDB::addTimeEvent(const time_event& event) {
-  return execute<int64_t>(q_add_time_event, event.next_occurence, event.meta,
-                          event.consumed, event.type());
+  return execute<int64_t>(q_add_time_event, event.user_id, event.next_occurence,
+                          event.meta, event.consumed, event.type());
 }
 
 void OrganizerDB::consumeTimeEvents(const std::vector<int64_t>& event_ids) {
@@ -194,9 +194,9 @@ std::vector<time_event> OrganizerDB::getTimeEvents(ts_t max_time) {
   return execute<std::vector<time_event>>(q_get_time_events, max_time);
 }
 
-std::vector<time_event> OrganizerDB::getTimeEventsByType(ts_t max_time,
-                                                         time_event_type type) {
-  return execute<std::vector<time_event>>(q_get_time_events_by_type, max_time, type);
+std::vector<time_event> OrganizerDB::getUserTimeEventsByType(std::int64_t user_id,
+                                                             time_event_type type) {
+  return execute<std::vector<time_event>>(q_get_user_time_events_by_type, user_id, type);
 }
 
 void OrganizerDB::consumeTimeEvents(const std::unordered_set<int64_t>& event_ids) {

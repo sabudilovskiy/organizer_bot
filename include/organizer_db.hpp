@@ -29,7 +29,7 @@ struct OrganizerDB : Database<io_event, time_event, Task, User> {
   void updateTask(std::int64_t id, std::int64_t user_id, const std::string& title,
                   const std::string& description, bool status);
 
-  void consumeEvents(const std::vector<int64_t>& event_ids);
+  void consumeIoEvents(const std::vector<int64_t>& event_ids);
 
   // returns: event_id
   // ignore event_id from
@@ -59,7 +59,8 @@ struct OrganizerDB : Database<io_event, time_event, Task, User> {
 
   std::vector<time_event> getTimeEvents(ts_t max_time);
 
-  std::vector<time_event> getTimeEventsByType(ts_t max_time, time_event_type type);
+  std::vector<time_event> getUserTimeEventsByType(std::int64_t user_id,
+                                                  time_event_type type);
 };
 
 }  // namespace bot

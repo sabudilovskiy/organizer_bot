@@ -92,7 +92,7 @@ void io_event_broker::save() {
                  events.end());
   }
   if (!consumed_events.empty()) {
-    db_.consumeEvents(consumed_events);
+    db_.consumeIoEvents(consumed_events);
     TGBM_LOG_INFO("Saved consumed {} io_events", consumed_events.size());
   } else {
     TGBM_LOG_DEBUG("Saved consumed 0 io_events");

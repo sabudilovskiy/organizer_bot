@@ -77,4 +77,19 @@ consumer_t ContextWithUser::read_time(std::string text, time_of_day& out) {
     }
   }
 }
+
+consumer_t ContextWithUser::read_positive_number(std::string text, std::int64_t& out) {
+  std::string input;
+  AWAIT_ALL(read_text(std::move(text), input));
+
+  auto result = scn::scan<std::int64_t>(input, "{:d}");
+  while (!result.has_value()) {
+    AWAIT_ALL(read_text(
+        R"(⚠️ Ошибка ввода! Ввод должен быть положительным числом.
+🔄 Попробуйте ещё раз и введите длительность в правильном формате: )",
+        input));
+    result = scn::scan<std::int64_t>(input, "{:d}");
+  }
+  out = result->value();
+}
 }  // namespace bot

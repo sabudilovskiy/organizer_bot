@@ -91,11 +91,12 @@ struct json_writer<weekday> {
 
 template <std::ranges::range R>
 struct json_writer<R> {
-  static void write(boost::json::value& v, const R& r) {
+  static void write(boost::json::value& j, const R& r) {
     using T = std::ranges::range_value_t<R>;
-    boost::json::array a;
+    j = boost::json::array{};
+    auto& j_a = j.as_array();
     for (const T& t : r) {
-      json_writer<T>::write(a.emplace_back(boost::json::value{}), t);
+      json_writer<T>::write(j_a.emplace_back(boost::json::value{}), t);
     }
   }
 };

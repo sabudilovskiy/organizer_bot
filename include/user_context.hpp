@@ -44,6 +44,7 @@ struct ContextWithUser {
   [[nodiscard]] action_t send_text(std::string text);
   [[nodiscard]] consumer_t read_text(std::string text, std::string& out);
   [[nodiscard]] consumer_t read_time(std::string text, time_of_day& out);
+  [[nodiscard]] consumer_t read_positive_number(std::string text, std::int64_t& out);
   [[nodiscard]] consumer_t delete_message(int64_t id);
 
   void to_main_menu();

@@ -30,18 +30,7 @@ consumer_t begin_input(ContextWithUser ctx, time_of_day& out) {
 }
 
 consumer_t duration_input(ContextWithUser ctx, int64_t& out) {
-  time_of_day end = time_of_day{-1, -1};
-  std::string input;
-  AWAIT_ALL(ctx.read_text("⏰ «Введите длительность созвона в минутах:", input));
-  auto result = scn::scan<std::int8_t>(input, "{:d}");
-  while (!result.has_value()) {
-    AWAIT_ALL(ctx.read_text(
-        R"(⚠️ Ошибка ввода! Длительность созвона должна быть положительным числом.
-🔄 Попробуйте ещё раз и введите длительность в правильном формате: )",
-        input));
-    result = scn::scan<std::int8_t>(input, "{:d}");
-  }
-  out = result->value();
+  AWAIT_ALL(ctx.read_positive_number("⏰ «Введите длительность созвона в минутах:", out));
 }
 
 consumer_t start_date(ContextWithUser ctx, ts_t& out) {

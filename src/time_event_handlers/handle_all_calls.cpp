@@ -98,9 +98,9 @@ consumer_t handle_all_calls(OrganizerDB& db, const tgbm::api::telegram& api,
 
   std::size_t idx = 0;
   for (auto& [call, emo] : today_calls) {
-    auto txt = fmt::format("{} {} - {} — {} ({})", emo, call.begin(), call.end(),
-                           call.description, human_frequence(call.schedule.frequence));
-    txt.append(txt);
+    auto line = fmt::format("\n\n{} {} - {} — {} ({})", emo, call.begin(), call.end(),
+                            call.name, human_frequence(call.schedule.frequence));
+    txt.append(std::move(line));
   }
 
   (void)co_await api.sendMessage({

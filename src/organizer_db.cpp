@@ -44,11 +44,11 @@ const std::string q_update_user =
 
 const std::string q_add_io_event =
     "INSERT INTO io_events "
-    "(ts, user_id, meta, consumed, meta_type) VALUES (?, ?, ?, 0, ?) "
+    "(ts, user_id, consumed, meta, meta_type) VALUES (?, ?, ?, 0, ?) "
     "RETURNING io_event_id";
 
 const std::string q_select_io_events =
-    "SELECT io_event_id, user_id, ts, meta, consumed, meta_type FROM io_events where "
+    "SELECT io_event_id, user_id, ts, consumed, meta, meta_type FROM io_events where "
     "consumed = 0 "
     "ORDER BY ts ASC, "
     "user_id ASC";
@@ -67,7 +67,7 @@ const std::string q_get_calls =
 
 const std::string q_get_time_events = R"(
 SELECT 
-  time_event_id, user_id, next_occurence, meta, consumed, meta_type FROM time_events
+  time_event_id, user_id, next_occurence, consumed, meta, meta_type FROM time_events
 WHERE 
   consumed = 0 AND 
   next_occurence < ? 
@@ -77,7 +77,7 @@ ORDER BY
 
 const std::string q_get_user_time_events_by_type = R"(
   SELECT 
-    time_event_id, user_id, next_occurence, meta, consumed, meta_type FROM time_events 
+    time_event_id, user_id, next_occurence, consumed, meta, meta_type FROM time_events 
   WHERE 
     consumed = 0 AND 
     user_id  = ? AND
@@ -88,7 +88,7 @@ const std::string q_get_user_time_events_by_type = R"(
 
 const std::string q_add_time_event =
     "INSERT INTO time_events "
-    "(user_id, next_occurence, meta, consumed, meta_type) VALUES (?,?,?,?,?) "
+    "(user_id, next_occurence, consumed, meta, meta_type) VALUES (?,?,?,?,?) "
     " RETURNING time_event_id";
 
 constexpr char q_consume_time_events[] =
@@ -133,11 +133,6 @@ User OrganizerDB::fetchUser(const RequestUser& user) {
   } else if (user.chat_id) {
     User new_user(user.user_id, *user.chat_id);
     execute<void>(q_insert_user, sql::as_sequence(new_user));
-    addTimeEvent(time_event{
-        .user_id = user.user_id,
-        .next_occurence = ts_t::max(),
-        .meta = reminder_all_calls_meta_t{.time_points = {}},
-    });
     return new_user;
   } else {
     throw std::runtime_error("not found user");
@@ -190,7 +185,7 @@ void OrganizerDB::consumeTimeEvents(const std::vector<int64_t>& event_ids) {
   execute<void>(query, sql::as_sequence(event_ids));
 }
 
-std::vector<time_event> OrganizerDB::getTimeEvents(ts_t max_time) {
+std::vector<time_event> OrganizerDB::getTimeEvents(ts_utc_t max_time) {
   return execute<std::vector<time_event>>(q_get_time_events, max_time);
 }
 

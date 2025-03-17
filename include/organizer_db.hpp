@@ -8,7 +8,6 @@
 
 #include "database.hpp"
 #include "io_event.hpp"
-#include "sql/native_type.hpp"
 #include "time_event.hpp"
 #include "types.hpp"
 
@@ -57,7 +56,7 @@ struct OrganizerDB : Database<io_event, time_event, Task, User> {
 
   void consumeTimeEvents(const std::unordered_set<int64_t>& event_ids);
 
-  std::vector<time_event> getTimeEvents(ts_t max_time);
+  std::vector<time_event> getTimeEvents(ts_utc_t max_time);
 
   std::vector<time_event> getUserTimeEventsByType(std::int64_t user_id,
                                                   time_event_type type);

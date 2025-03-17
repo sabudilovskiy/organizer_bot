@@ -14,6 +14,8 @@ struct App {
 
   dd::task<void> saving_io_events();
 
+  dd::task<void> consume_time_events();
+
   dd::task<void> executing_time_events();
 
   dd::task<void> checking_stop();

@@ -5,7 +5,7 @@
 #include <tgbm/utils/pfr_extension.hpp>
 
 #include "meta.hpp"
-#include "time.hpp"
+#include "traits.hpp"
 
 namespace bot {
 template <typename T>
@@ -24,11 +24,6 @@ struct json_writer<int64_t> {
 template <>
 struct json_writer<bool> {
   static void write(boost::json::value& v, bool b);
-};
-
-template <>
-struct json_writer<ts_t> {
-  static void write(boost::json::value& v, ts_t ts);
 };
 
 template <typename T>
@@ -82,13 +77,6 @@ struct json_writer<std::variant<Ts...>> {
   }
 };
 
-template <>
-struct json_writer<weekday> {
-  static void write(boost::json::value& v, const weekday& w) {
-    v = to_string(w);
-  }
-};
-
 template <std::ranges::range R>
 struct json_writer<R> {
   static void write(boost::json::value& j, const R& r) {
@@ -98,6 +86,13 @@ struct json_writer<R> {
     for (const T& t : r) {
       json_writer<T>::write(j_a.emplace_back(boost::json::value{}), t);
     }
+  }
+};
+
+template <serializable T>
+struct json_writer<T> {
+  static void write(boost::json::value& v, const T& t) {
+    v = t.serialize();
   }
 };
 

@@ -32,7 +32,6 @@ parser_column_decl(json_value, text, false);
 parser_column_decl(io_event_meta, text, false);
 parser_column_decl(native_type, text, false);
 parser_column_decl(time_event_meta, text, false);
-parser_column_decl(ts_t, text, false);
 
 #undef parser_column_decl
 
@@ -85,6 +84,25 @@ struct parser_column<T> {
       return false;
     }
     out = *r;
+    return true;
+  }
+};
+
+template <parseable_inplace T>
+struct parser_column<T> {
+  static constexpr auto nt = native_type::text;
+  static constexpr auto is_null = false;
+  static bool parse(const SQLite::Column& column, T& out) {
+    std::string str;
+    bool ok = parser_column<std::string>::parse(column, str);
+    if (!ok) {
+      return false;
+    }
+    auto r = T::parse(str, out);
+    if (!r) {
+      TGBM_LOG_ERROR("Fail parse `{}` from `{}`", name_type_v<T>, str);
+      return false;
+    }
     return true;
   }
 };

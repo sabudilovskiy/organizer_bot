@@ -5,7 +5,6 @@
 
 #include "io_event.hpp"
 #include "json/value.hpp"
-#include "time.hpp"
 
 namespace bot::sql {
 
@@ -62,11 +61,10 @@ struct binder<tgbm::api::optional<T>> {
   }
 };
 
-template <>
-struct binder<ts_t> {
-  static void bind(SQLite::Statement& statement, const ts_t& arg,
-                   std::size_t& cur_index) {
-    auto str = to_string(arg);
+template <serializable T>
+struct binder<T> {
+  static void bind(SQLite::Statement& statement, const T& arg, std::size_t& cur_index) {
+    auto str = std::string(arg.serialize());
     statement.bind(cur_index++, str);
   }
 };
@@ -131,11 +129,4 @@ struct binder<std::variant<Ts...>> {
   }
 };
 
-template <>
-struct binder<std::chrono::weekday> {
-  static void bind(SQLite::Statement& statement, const std::chrono::weekday& w,
-                   std::size_t& cur_index) {
-    statement.bind(cur_index++, std::string(to_string(w)));
-  }
-};
 }  // namespace bot::sql

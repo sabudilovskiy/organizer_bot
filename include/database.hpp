@@ -3,7 +3,7 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 
 #include "sql_utils.hpp"
-#include "time.hpp"
+#include "time/ts.hpp"
 
 namespace bot {
 
@@ -33,7 +33,7 @@ struct PragmaInfo {
 
 struct Migration {
   std::int64_t id;
-  ts_t applied_at;
+  ts_utc_t applied_at;
   std::string migration_sql;
 };
 
@@ -98,7 +98,7 @@ Database<Tables...>::Database(const std::string& dbPath, const auto& migrations)
     if (idx >= applied_migrations.size()) {
       try {
         db->exec(migration);
-        sql::execute<void>(db, q_insert_migration, now(), migration);
+        sql::execute<void>(db, q_insert_migration, ts_utc_t::now(), migration);
 
         TGBM_LOG_INFO("Migration {:03} successfully applied", idx);
       } catch (const std::exception& exc) {

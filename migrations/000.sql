@@ -19,8 +19,8 @@ CREATE TABLE io_events (
     io_event_id INTEGER PRIMARY KEY AUTOINCREMENT    NOT NULL,
     user_id   INTEGER                                 NOT NULL,
     ts        TEXT                                    NOT NULL,
-    meta      TEXT                                    NOT NULL,
     consumed  INTEGER                                 NOT NULL,
+    meta      TEXT                                    NOT NULL,
     meta_type TEXT                                    NOT NULL
 );
 
@@ -28,8 +28,8 @@ CREATE TABLE time_events (
     time_event_id  INTEGER  PRIMARY KEY AUTOINCREMENT  NOT NULL,
     user_id        INTEGER                                     ,
     next_occurence TEXT                                NOT NULL,
-    meta           TEXT                                NOT NULL,
     consumed       INTEGER                             NOT NULL,
+    meta           TEXT                                NOT NULL,
     meta_type      TEXT                                NOT NULL
 );
 

@@ -31,7 +31,6 @@ consumer_t ContextWithUser::delete_message(int64_t id) {
 void ContextWithUser::to_main_menu() {
   io_event_broker.add_deferred_event({
       .user_id = user.user_id,
-      .ts = now(),
       .meta = command_meta_t{"start"},
   });
 }

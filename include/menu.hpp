@@ -28,7 +28,7 @@ struct Menu {
 
   Menu& add(std::string text, T t);
 
-  consumer_t show(ContextWithUser ctx, T& out) &;
+  [[nodiscard]] consumer_t show(ContextWithUser ctx, T& out) &;
 
  private:
   std::string title_;
@@ -55,11 +55,11 @@ template <typename T>
   std::unordered_map<std::int64_t, T*> cb_map;
 
   auto markup = Markup{};
-  auto ts = now();
+  auto ts = ts_utc_t::now();
 
   for (auto& [text, value] : items_) {
     auto idx = markup.inline_keyboard.size();
-    auto cb_data = fmt::format("{};{};{}", idx, id_, now());
+    auto cb_data = fmt::format("{};{};{}", idx, id_, ts);
     cb_map[idx] = &value;
     markup.inline_keyboard.emplace_back().emplace_back(Button{
         .text = text,

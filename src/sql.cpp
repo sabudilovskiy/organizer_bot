@@ -68,13 +68,6 @@ bool parser_column<std::string>::parse(const SQLite::Column& col, std::string& o
   return true;
 }
 
-bool parser_column<ts_t>::parse(const SQLite::Column& col, ts_t& out) {
-  if (!col.isText()) {
-    return false;
-  }
-  return parse_ts(col.getString(), out);
-}
-
 bool parser_column<native_type>::parse(const SQLite::Column& col, native_type& out) {
   if (!col.isText()) {
     return false;

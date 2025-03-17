@@ -7,7 +7,8 @@
 #include <tgbm/api/optional.hpp>
 
 #include "json/value.hpp"
-#include "time.hpp"
+
+#include "time/schedule_unit.hpp"
 
 namespace bot {
 
@@ -29,7 +30,7 @@ struct RequestUser {
 
 struct UserSettings {
   std::vector<time_of_day> call_everyday_notifies;
-  int64_t gmt_offset_m = 90;
+  time_zone tz = time_zone::moscow;
 };
 
 struct User {
@@ -46,13 +47,10 @@ struct User {
   static constexpr std::string_view db_name = "users";
   static constexpr int64_t max_additional_messages = 1;
 
-  ts_t convert_to_utc(ts_t time) const;
-  void convert_inplace_to_utc(ts_t& time) const;
+  ts_zoned_t convert_to_user_time(ts_utc_t time) const;
+  void convert_to_user_time(ts_utc_t time, ts_zoned_t& out) const;
 
-  ts_t convert_to_user_time(ts_t time) const;
-  void convert_inplace_to_user_time(ts_t& time) const;
-
-  ts_t now() const;
+  ts_zoned_t now() const noexcept;
 };
 
 struct Call {

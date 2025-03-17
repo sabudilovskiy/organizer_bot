@@ -1,6 +1,7 @@
 #include "dialogs.hpp"
 #include "macro.hpp"
 #include "menu.hpp"
+#include "formatters/all.hpp"
 
 namespace bot {
 

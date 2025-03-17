@@ -7,7 +7,7 @@
 #include "macro.hpp"
 #include "organizer_db.hpp"
 #include "tgbm/api/telegram.hpp"
-#include "time.hpp"
+#include "time/ts.hpp"
 #include "time_event.hpp"
 
 namespace bot {
@@ -19,7 +19,7 @@ struct time_event_dispatcher {
 
   const time_event* top();
 
-  ts_t next_occurenece();
+  ts_utc_t next_occurenece();
 
   void consume(std::int64_t event_id);
 
@@ -29,11 +29,12 @@ struct time_event_dispatcher {
 
   void load();
 
-  consumer_t handle(time_event event);
+  [[nodiscard]] consumer_t handle(time_event event);
 
-  consumer_t execute();
+  [[nodiscard]] consumer_t execute();
 
-  void push(time_event event);
+  // returns: event_id
+  std::int64_t push(time_event event);
 
   void save();
 

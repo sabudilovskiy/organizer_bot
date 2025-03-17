@@ -7,7 +7,7 @@ namespace bot {
 
 using namespace std::chrono;
 
-consumer_t weekday_input(ContextWithUser ctx, weekday& out) {
+[[nodiscard]] consumer_t weekday_input(ContextWithUser ctx, weekday& out) {
   ctx.set_need_new_message();
   Menu<weekday> weekday_menu("📆 Выберите день недели, в который будет проходить созвон:",
                              ID());
@@ -24,33 +24,31 @@ consumer_t weekday_input(ContextWithUser ctx, weekday& out) {
   ctx.set_need_new_message();
 }
 
-consumer_t begin_input(ContextWithUser ctx, time_of_day& out) {
+[[nodiscard]] consumer_t begin_input(ContextWithUser ctx, time_of_day& out) {
   AWAIT_ALL(ctx.read_time(
       "⏰ «Введите время начала созвона в формате ЧЧ:ММ (например, 15:30):", out));
 }
 
-consumer_t duration_input(ContextWithUser ctx, int64_t& out) {
+[[nodiscard]] consumer_t duration_input(ContextWithUser ctx, int64_t& out) {
   AWAIT_ALL(ctx.read_positive_number("⏰ «Введите длительность созвона в минутах:", out));
 }
 
-consumer_t start_date(ContextWithUser ctx, ts_t& out) {
+[[nodiscard]] consumer_t active_from(ContextWithUser ctx, date& out) {
   std::string input;
-  optional<ts_t> res;
   AWAIT_ALL(ctx.read_text(
       "📅 Введите дату первого созвона в формате ДД.ММ.ГГГГ (например, 06.03.2025):",
       input));
-  res = parse_short_ts(input, use_optional{});
-  while (!res) {
+  ;
+  while (!date::parse(input, out)) {
     AWAIT_ALL(ctx.read_text(
         "⚠️ Ошибка ввода! Дата должна быть в формате ДД.ММ.ГГГГ (например, 06.03.2025):"
         "🔄 Попробуйте ещё раз и введите время в правильном формате: ",
         input));
-    res = parse_short_ts(input, use_optional{});
   }
-  out = *res;
 }
 
-consumer_t schedule_frequence_input(ContextWithUser ctx, schedule_frequence& out) {
+[[nodiscard]] consumer_t schedule_frequence_input(ContextWithUser ctx,
+                                                  schedule_frequence& out) {
   ctx.set_need_new_message();
   Menu<schedule_frequence> menu("⏳ Как часто будет проводиться этот созвон?", ID());
   // clang-format off
@@ -61,7 +59,7 @@ consumer_t schedule_frequence_input(ContextWithUser ctx, schedule_frequence& out
   AWAIT_ALL(menu.show(ctx, out));
 }
 
-consumer_t call_add_menu(ContextWithUser ctx) {
+[[nodiscard]] consumer_t call_add_menu(ContextWithUser ctx) {
   Call call;
   call.user_id = ctx.user.user_id;
   AWAIT_ALL(ctx.read_text(
@@ -89,7 +87,7 @@ consumer_t call_add_menu(ContextWithUser ctx) {
     AWAIT_ALL(weekday_input(ctx, su.wd));
     AWAIT_ALL(begin_input(ctx, su.time));
     AWAIT_ALL(schedule_frequence_input(ctx, su.frequence));
-    AWAIT_ALL(start_date(ctx, su.start_date));
+    AWAIT_ALL(active_from(ctx, su.active_from));
 
     schedule_units.emplace_back(std::move(su));
     if (schedule_units.size() == 1) {

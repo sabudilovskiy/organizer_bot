@@ -24,7 +24,6 @@ dd::task<tgbm::api::optional<io_event>> generate_event(tgbm::api::Update u,
     }
     co_return io_event{
         .user_id = msg->from->id,
-        .ts = now(),
         .meta = std::move(meta),
     };
   } else if (auto* query = u.get_callback_query(); query && query->from && query->data) {
@@ -36,7 +35,6 @@ dd::task<tgbm::api::optional<io_event>> generate_event(tgbm::api::Update u,
         .wait();
     co_return io_event{
         .user_id = query->from->id,
-        .ts = now(),
         .meta =
             cb_query_meta_t{
                 .id = query->id,

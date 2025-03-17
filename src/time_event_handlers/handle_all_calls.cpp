@@ -6,12 +6,12 @@ std::string_view state_emoji(state_today st) {
   switch (st) {
     case state_today::past:
       return "🔴";
-    case state_today::other_day:
+    case state_today::upcoming:
       return "🟡";
     case state_today::active:
       return "🟢";
-    default:
-      tgbm::unreachable();
+    case state_today::other_day:
+      return "⚫";
   }
 }
 

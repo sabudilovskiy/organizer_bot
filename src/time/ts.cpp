@@ -8,7 +8,8 @@ ts_utc_t::ts_utc_t(native_t time) noexcept : time_(time) {
 }
 
 ts_utc_t ts_utc_t::now() noexcept {
-  return std::chrono::system_clock::now();
+  return ts_utc_t(
+      time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()));
 }
 
 ts_utc_t ts_utc_t::parse(std::string_view str, time_zone tz) {

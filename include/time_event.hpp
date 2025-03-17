@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <variant>
 
 #include "optional.hpp"
 #include "time/time_of_day.hpp"

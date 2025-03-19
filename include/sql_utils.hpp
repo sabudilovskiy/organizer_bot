@@ -32,7 +32,9 @@ Res execute_unsafe(std::unique_ptr<SQLite::Database>& db, fmt::format_string<Arg
 }
 
 inline auto n_placeholders(std::size_t N) {
-  return fmt::format("{}", std::views::repeat("?", N) | views::join(","));
+  return fmt::format("{}", std::views::iota(std::size_t(0), N) |
+                               std::views::transform([](auto) { return "?"; }) |
+                               views::join(","));
 }
 
 }  // namespace bot::sql

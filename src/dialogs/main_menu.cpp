@@ -11,8 +11,10 @@ enum struct MainMenu {
   settings,
 };
 
-consumer_t main_menu(Context ctx_) {
-  auto user = ctx_.db.fetchUser(RequestUser{.user_id = ctx_.user_id});
+consumer_t main_menu(Context ctx_, std::int64_t user_id) {
+  auto user = ctx_.db.fetchUser(RequestUser{
+      .user_id = user_id,
+  });
   return main_menu(ctx_, std::move(user));
 }
 

@@ -12,7 +12,7 @@ enum struct schedulerMenu {
   to_main_menu,
 };
 
-consumer_t scheduler_menu(ContextWithUser ctx) {
+[[nodiscard]] consumer_t scheduler_menu(ContextWithUser ctx) {
   for (;;) {
     schedulerMenu choosed;
     auto menu = Menu<schedulerMenu>{

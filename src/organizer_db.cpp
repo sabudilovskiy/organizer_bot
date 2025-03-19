@@ -32,23 +32,23 @@ const std::string q_find_task_by_id =
     "FROM tasks WHERE user_id = ? AND id = ?";
 
 const std::string q_insert_user =
-    "INSERT INTO users (user_id, chat_id, message_id, additional_messages, gmt_offset_m) "
+    "INSERT INTO users (user_id, chat_id, message_id, additional_messages, settings) "
     "VALUES (?, ?, ?, ?, "
     "?)";
 const std::string q_get_user =
-    "SELECT user_id, chat_id, message_id, additional_messages, gmt_offset_m FROM users "
+    "SELECT user_id, chat_id, message_id, additional_messages, settings FROM users "
     "WHERE user_id = ?";
 const std::string q_update_user =
-    "UPDATE users SET message_id = ?, additional_messages = ?, gmt_offset_m = ? WHERE "
+    "UPDATE users SET message_id = ?, additional_messages = ?, settings = ? WHERE "
     "user_id = ?";
 
 const std::string q_add_io_event =
     "INSERT INTO io_events "
-    "(ts, user_id, meta, consumed, meta_type) VALUES (?, ?, ?, 0, ?) "
+    "(ts, user_id, consumed, meta, meta_type) VALUES (?, ?, ?, 0, ?) "
     "RETURNING io_event_id";
 
 const std::string q_select_io_events =
-    "SELECT io_event_id, user_id, ts, meta, consumed, meta_type FROM io_events where "
+    "SELECT io_event_id, user_id, ts, consumed, meta, meta_type FROM io_events where "
     "consumed = 0 "
     "ORDER BY ts ASC, "
     "user_id ASC";
@@ -57,15 +57,17 @@ constexpr char q_consume_io_events[] =
     "UPDATE io_events SET consumed = 1 WHERE io_event_id IN ({})";
 
 const std::string q_insert_call =
-    "INSERT INTO calls (user_id, name, description, schedule) VALUES (?,?,?,?) RETURNING "
-    "call_id";
+    "INSERT INTO calls "
+    "(user_id, name, description, duration, schedule) VALUES (?,?,?,?,?)  "
+    "RETURNING call_id";
 
 const std::string q_get_calls =
-    "SELECT call_id, user_id, name, description, schedule FROM calls WHERE user_id = ?";
+    "SELECT call_id, user_id, name, description, duration, schedule FROM calls WHERE "
+    "user_id = ?";
 
 const std::string q_get_time_events = R"(
 SELECT 
-  time_event_id, next_occurence, meta, consumed, meta_type FROM time_events 
+  time_event_id, user_id, next_occurence, consumed, meta, meta_type FROM time_events
 WHERE 
   consumed = 0 AND 
   next_occurence < ? 
@@ -73,9 +75,20 @@ ORDER BY
   next_occurence ASC
 )";
 
+const std::string q_get_user_time_events_by_type = R"(
+  SELECT 
+    time_event_id, user_id, next_occurence, consumed, meta, meta_type FROM time_events 
+  WHERE 
+    consumed = 0 AND 
+    user_id  = ? AND
+    meta_type = ?
+  ORDER BY 
+    next_occurence ASC
+  )";
+
 const std::string q_add_time_event =
     "INSERT INTO time_events "
-    "(next_occurence, meta, consumed, meta_type) VALUES (?,?,?,?) "
+    "(user_id, next_occurence, consumed, meta, meta_type) VALUES (?,?,?,?,?) "
     " RETURNING time_event_id";
 
 constexpr char q_consume_time_events[] =
@@ -128,7 +141,7 @@ User OrganizerDB::fetchUser(const RequestUser& user) {
 
 void OrganizerDB::updateUser(const User& user) {
   execute<void>(q_update_user, user.message_id, user.additional_messages, user.user_id,
-                user.gmt_offset_m);
+                user.settings);
 }
 
 tgbm::api::optional<Task> OrganizerDB::find_task(std::int64_t user_id,
@@ -144,7 +157,7 @@ std::int64_t OrganizerDB::addEvent(const io_event& e) {
   return execute<int64_t>(q_add_io_event, e.ts, e.user_id, e.meta, e.type());
 }
 
-void OrganizerDB::consumeEvents(const std::vector<int64_t>& event_ids) {
+void OrganizerDB::consumeIoEvents(const std::vector<int64_t>& event_ids) {
   if (event_ids.empty()) {
     return;
   }
@@ -155,7 +168,7 @@ void OrganizerDB::consumeEvents(const std::vector<int64_t>& event_ids) {
 
 std::int64_t OrganizerDB::addCall(const Call& call) {
   return execute<std::int64_t>(q_insert_call, call.user_id, call.name, call.description,
-                               call.schedule);
+                               call.duration, call.schedule);
 }
 
 std::vector<Call> OrganizerDB::getCalls(std::int64_t user_id) {
@@ -163,8 +176,8 @@ std::vector<Call> OrganizerDB::getCalls(std::int64_t user_id) {
 }
 
 std::int64_t OrganizerDB::addTimeEvent(const time_event& event) {
-  return execute<int64_t>(q_add_time_event, event.next_occurence, event.meta,
-                          event.consumed, event.type());
+  return execute<int64_t>(q_add_time_event, event.user_id, event.next_occurence,
+                          event.meta, event.consumed, event.type());
 }
 
 void OrganizerDB::consumeTimeEvents(const std::vector<int64_t>& event_ids) {
@@ -172,8 +185,18 @@ void OrganizerDB::consumeTimeEvents(const std::vector<int64_t>& event_ids) {
   execute<void>(query, sql::as_sequence(event_ids));
 }
 
-std::vector<time_event> OrganizerDB::getTimeEvents(ts_t max_time) {
+std::vector<time_event> OrganizerDB::getTimeEvents(ts_utc_t max_time) {
   return execute<std::vector<time_event>>(q_get_time_events, max_time);
+}
+
+std::vector<time_event> OrganizerDB::getUserTimeEventsByType(std::int64_t user_id,
+                                                             time_event_type type) {
+  return execute<std::vector<time_event>>(q_get_user_time_events_by_type, user_id, type);
+}
+
+void OrganizerDB::consumeTimeEvents(const std::unordered_set<int64_t>& event_ids) {
+  auto query = fmt::format(q_consume_time_events, sql::n_placeholders(event_ids.size()));
+  execute<void>(query, sql::as_sequence(event_ids));
 }
 
 }  // namespace bot

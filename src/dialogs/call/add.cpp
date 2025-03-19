@@ -7,7 +7,7 @@ namespace bot {
 
 using namespace std::chrono;
 
-consumer_t weekday_input(ContextWithUser ctx, weekday& out) {
+[[nodiscard]] consumer_t weekday_input(ContextWithUser ctx, weekday& out) {
   ctx.set_need_new_message();
   Menu<weekday> weekday_menu("📆 Выберите день недели, в который будет проходить созвон:",
                              ID());
@@ -24,49 +24,31 @@ consumer_t weekday_input(ContextWithUser ctx, weekday& out) {
   ctx.set_need_new_message();
 }
 
-consumer_t time_of_day_input(ContextWithUser ctx, time_of_day& out) {
-  out = time_of_day{-1, -1};
-  std::string input;
-  AWAIT_ALL(ctx.read_text(
-      "⏰ «Введите время начала созвона в формате ЧЧ:ММ (например, 15:30):", input));
-  auto result = scn::scan<int, int>(input, "{:d}:{:d}");
-  bool failed = !result.has_value();
-  if (!failed) {
-    auto [h, m] = result->values();
-    out = time_of_day{h, m};
-  }
-  while (!out.is_valid()) {
-    AWAIT_ALL(ctx.read_text(
-        "⚠️ Ошибка ввода! Время должно быть в формате ЧЧ:ММ (например, 15:30)."
-        "🔄 Попробуйте ещё раз и введите время в правильном формате: ",
-        input));
-    result = scn::scan<int, int>(input, "{:d}:{:d}");
-    failed = !result.has_value();
-    if (!failed) {
-      auto [h, m] = result->values();
-      out = time_of_day{h, m};
-    }
-  }
+[[nodiscard]] consumer_t begin_input(ContextWithUser ctx, time_of_day& out) {
+  AWAIT_ALL(ctx.read_time(
+      "⏰ «Введите время начала созвона в формате ЧЧ:ММ (например, 15:30):", out));
 }
 
-consumer_t start_date(ContextWithUser ctx, ts_t& out) {
+[[nodiscard]] consumer_t duration_input(ContextWithUser ctx, int64_t& out) {
+  AWAIT_ALL(ctx.read_positive_number("⏰ «Введите длительность созвона в минутах:", out));
+}
+
+[[nodiscard]] consumer_t active_from(ContextWithUser ctx, date& out) {
   std::string input;
-  optional<ts_t> res;
   AWAIT_ALL(ctx.read_text(
       "📅 Введите дату первого созвона в формате ДД.ММ.ГГГГ (например, 06.03.2025):",
       input));
-  res = parse_short_ts(input, use_optional{});
-  while (!res) {
+  ;
+  while (!date::parse(input, out)) {
     AWAIT_ALL(ctx.read_text(
         "⚠️ Ошибка ввода! Дата должна быть в формате ДД.ММ.ГГГГ (например, 06.03.2025):"
         "🔄 Попробуйте ещё раз и введите время в правильном формате: ",
         input));
-    res = parse_short_ts(input, use_optional{});
   }
-  out = *res;
 }
 
-consumer_t schedule_frequence_input(ContextWithUser ctx, schedule_frequence& out) {
+[[nodiscard]] consumer_t schedule_frequence_input(ContextWithUser ctx,
+                                                  schedule_frequence& out) {
   ctx.set_need_new_message();
   Menu<schedule_frequence> menu("⏳ Как часто будет проводиться этот созвон?", ID());
   // clang-format off
@@ -77,9 +59,9 @@ consumer_t schedule_frequence_input(ContextWithUser ctx, schedule_frequence& out
   AWAIT_ALL(menu.show(ctx, out));
 }
 
-consumer_t call_add_menu(ContextWithUser ctx) {
+[[nodiscard]] consumer_t call_add_menu(ContextWithUser ctx) {
   Call call;
-  call.user_id = ctx.user_id;
+  call.user_id = ctx.user.user_id;
   AWAIT_ALL(ctx.read_text(
       "📌 Введите название созвона. Оно поможет вам быстро ориентироваться в расписании.",
       call.name));
@@ -91,6 +73,9 @@ consumer_t call_add_menu(ContextWithUser ctx) {
                     call.description));
   if (call.description == "-")
     call.description = "";
+
+  AWAIT_ALL(duration_input(ctx, call.duration));
+
   std::vector<schedule_unit> schedule_units;
   co_await ctx.send_text(
       "🕒 Теперь настроим расписание для созвона. Можно добавить несколько вариантов, "
@@ -100,9 +85,9 @@ consumer_t call_add_menu(ContextWithUser ctx) {
   for (;;) {
     schedule_unit su;
     AWAIT_ALL(weekday_input(ctx, su.wd));
-    AWAIT_ALL(time_of_day_input(ctx, su.time));
+    AWAIT_ALL(begin_input(ctx, su.time));
     AWAIT_ALL(schedule_frequence_input(ctx, su.frequence));
-    AWAIT_ALL(start_date(ctx, su.start_date));
+    AWAIT_ALL(active_from(ctx, su.active_from));
 
     schedule_units.emplace_back(std::move(su));
     if (schedule_units.size() == 1) {

@@ -5,7 +5,6 @@
 
 #include "io_event.hpp"
 #include "json/value.hpp"
-#include "time.hpp"
 
 namespace bot::sql {
 
@@ -13,6 +12,9 @@ template <typename T>
 struct as_sequence {
   const T& t;
 };
+
+template <typename T>
+as_sequence(T) -> as_sequence<T>;
 
 template <typename T>
 struct binder {};
@@ -59,11 +61,10 @@ struct binder<tgbm::api::optional<T>> {
   }
 };
 
-template <>
-struct binder<ts_t> {
-  static void bind(SQLite::Statement& statement, const ts_t& arg,
-                   std::size_t& cur_index) {
-    auto str = to_string(arg);
+template <serializable T>
+struct binder<T> {
+  static void bind(SQLite::Statement& statement, const T& arg, std::size_t& cur_index) {
+    auto str = std::string(arg.serialize());
     statement.bind(cur_index++, str);
   }
 };
@@ -92,10 +93,11 @@ struct binder<as_sequence<T>> {
   }
 };
 
-template <typename T>
-struct binder<as_sequence<std::vector<T>>> {
-  static void bind(SQLite::Statement& statement, const as_sequence<std::vector<T>>& arg,
+template <std::ranges::range R>
+struct binder<as_sequence<R>> {
+  static void bind(SQLite::Statement& statement, const as_sequence<R>& arg,
                    std::size_t& cur_index) {
+    using T = std::ranges::range_value_t<R>;
     for (auto& t : arg.t) {
       binder<T>::bind(statement, t, cur_index);
     }
@@ -127,11 +129,4 @@ struct binder<std::variant<Ts...>> {
   }
 };
 
-template <>
-struct binder<std::chrono::weekday> {
-  static void bind(SQLite::Statement& statement, const std::chrono::weekday& w,
-                   std::size_t& cur_index) {
-    statement.bind(cur_index++, std::string(to_string(w)));
-  }
-};
 }  // namespace bot::sql

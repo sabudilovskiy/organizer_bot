@@ -15,10 +15,12 @@ struct OptConfig {
   tgbm::api::optional<std::string> db_path;
   tgbm::api::optional<int64_t> timeout;
   tgbm::api::optional<int64_t> interval_check_stop;
+  tgbm::api::optional<int64_t> interval_consume_time_events = 10;
   tgbm::api::optional<int64_t> interval_exec_time_events;
   tgbm::api::optional<int64_t> interval_saving_io_events;
   tgbm::api::optional<bool> skip_fail_save_db;
   tgbm::api::optional<bool> skip_fail_updates;
+  tgbm::api::optional<bool> skip_fail_time_events;
 };
 
 Config extract_config(OptConfig readed_cfg) {
@@ -40,7 +42,7 @@ Config Config::read_from_fs(std::string_view path) {
   }
   json_value j(boost::json::parse(file));
   auto fields = []() {
-    auto names = boost::pfr::names_as_array<Config>();
+    auto names = names_as_array_v<Config>;
     return std::unordered_set<std::string_view>(names.begin(), names.end());
   }();
   auto res = extract_config(j.as<OptConfig>());

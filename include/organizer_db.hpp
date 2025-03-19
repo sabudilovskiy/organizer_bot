@@ -4,10 +4,10 @@
 #include <vector>
 #include <tgbm/api/optional.hpp>
 #include <SQLiteCpp/SQLiteCpp.h>
+#include <unordered_set>
 
 #include "database.hpp"
 #include "io_event.hpp"
-#include "sql/native_type.hpp"
 #include "time_event.hpp"
 #include "types.hpp"
 
@@ -28,7 +28,7 @@ struct OrganizerDB : Database<io_event, time_event, Task, User> {
   void updateTask(std::int64_t id, std::int64_t user_id, const std::string& title,
                   const std::string& description, bool status);
 
-  void consumeEvents(const std::vector<int64_t>& event_ids);
+  void consumeIoEvents(const std::vector<int64_t>& event_ids);
 
   // returns: event_id
   // ignore event_id from
@@ -54,7 +54,12 @@ struct OrganizerDB : Database<io_event, time_event, Task, User> {
 
   void consumeTimeEvents(const std::vector<int64_t>& event_ids);
 
-  std::vector<time_event> getTimeEvents(ts_t max_time);
+  void consumeTimeEvents(const std::unordered_set<int64_t>& event_ids);
+
+  std::vector<time_event> getTimeEvents(ts_utc_t max_time);
+
+  std::vector<time_event> getUserTimeEventsByType(std::int64_t user_id,
+                                                  time_event_type type);
 };
 
 }  // namespace bot

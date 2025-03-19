@@ -67,6 +67,28 @@ dd::task<void> App::listening_updates() {
   }
 }
 
+dd::task<void> App::consume_time_events() {
+  tgbm::io_error_code errc;
+
+  while (!errc) {
+    co_await bot.sleep(std::chrono::seconds(config.interval_consume_time_events), errc);
+
+    try {
+      time_ev_dispatcher.save();
+    } catch (const std::exception& exc) {
+      TGBM_LOG_ERROR("Fail save consumed time events: {}", exc.what());
+      if (!config.skip_fail_save_db) {
+        bot.stop();
+      }
+    }
+  }
+  try {
+    time_ev_dispatcher.save();
+  } catch (const std::exception& exc) {
+    TGBM_LOG_CRIT("Fail save consumed time events before stopping: {}", exc.what());
+  }
+}
+
 dd::task<void> App::executing_time_events() {
   tgbm::io_error_code errc;
 
@@ -74,35 +96,32 @@ dd::task<void> App::executing_time_events() {
     co_await bot.sleep(std::chrono::seconds(config.interval_saving_io_events), errc);
 
     try {
-      io_ev_broker.save();
+      co_foreach(auto _, time_ev_dispatcher.execute()) {
+      }
     } catch (const std::exception& exc) {
-      TGBM_LOG_ERROR("Fail save executed time events: {}", exc.what());
-      if (!config.skip_fail_save_db) {
+      TGBM_LOG_ERROR("Fail execute time event: {}", exc.what());
+      if (!config.skip_fail_time_events) {
         bot.stop();
       }
     }
-  }
-  try {
-    io_ev_broker.save();
-  } catch (const std::exception& exc) {
-    TGBM_LOG_CRIT("Fail save executed time events before stopping: {}", exc.what());
   }
 }
 
 App::App(Config config)
     : bot(config.token),
       db(config.db_path),
-      io_ev_broker(bot.api, db),
       time_ev_dispatcher(bot.api, db),
+      io_ev_broker(bot.api, db, time_ev_dispatcher),
       config(std::move(config)) {
-  io_ev_broker.load();
   time_ev_dispatcher.load();
+  io_ev_broker.load();
 }
 
 void App::run() {
   saving_io_events().start_and_detach();
   listening_updates().start_and_detach();
   executing_time_events().start_and_detach();
+  consume_time_events().start_and_detach();
   checking_stop().start_and_detach();
   io_ev_broker.process_old_events().start_and_detach();
   bot.run();

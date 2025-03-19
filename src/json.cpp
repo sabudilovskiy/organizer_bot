@@ -80,10 +80,6 @@ bool json_reader<bool>::read(const boost::json::value& v) {
   return v.as_bool();
 }
 
-ts_t json_reader<ts_t>::read(const boost::json::value& v) {
-  return parse_ts(json_reader<std::string>::read(v));
-}
-
 boost::json::object json_reader<boost::json::object>::read(const boost::json::value& v) {
   return v.as_object();
 }
@@ -94,10 +90,6 @@ void json_writer<std::string>::write(boost::json::value& v, const std::string& s
 
 void json_writer<int64_t>::write(boost::json::value& v, int64_t i) {
   v = i;
-}
-
-void json_writer<ts_t>::write(boost::json::value& v, ts_t ts) {
-  v = to_string(ts);
 }
 
 json_view json_value::operator[](std::size_t idx) {

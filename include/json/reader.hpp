@@ -1,11 +1,12 @@
 #pragma once
 #include <boost/json.hpp>
 #include <magic_enum/magic_enum.hpp>
+#include <set>
 #include <tgbm/api/optional.hpp>
 #include <tgbm/utils/pfr_extension.hpp>
 
 #include "meta.hpp"
-#include "time.hpp"
+#include "traits.hpp"
 #include "utils.hpp"
 
 namespace bot {
@@ -27,9 +28,11 @@ struct json_reader<bool> {
   static bool read(const boost::json::value& v);
 };
 
-template <>
-struct json_reader<ts_t> {
-  static ts_t read(const boost::json::value& v);
+template <parseable T>
+struct json_reader<T> {
+  static T read(const boost::json::value& v) {
+    return T::parse(v.as_string());
+  }
 };
 
 template <>
@@ -101,11 +104,27 @@ struct json_reader<tgbm::api::optional<T>> {
   }
 };
 
-template <>
-struct json_reader<weekday> {
-  static weekday read(const boost::json::value& v) {
-    auto str = json_reader<std::string>::read(v);
-    return parse_weekday(str);
+template <typename T>
+struct json_reader<std::vector<T>> {
+  static std::vector<T> read(const boost::json::value& v) {
+    std::vector<T> out;
+    auto& arr = v.as_array();
+    for (auto& e : arr) {
+      out.emplace_back(json_reader<T>::read(e));
+    }
+    return out;
+  }
+};
+
+template <typename T>
+struct json_reader<std::set<T>> {
+  static std::set<T> read(const boost::json::value& v) {
+    std::set<T> out;
+    auto& arr = v.as_array();
+    for (auto& e : arr) {
+      out.emplace(json_reader<T>::read(e));
+    }
+    return out;
   }
 };
 

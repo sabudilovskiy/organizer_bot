@@ -14,6 +14,8 @@ struct App {
 
   dd::task<void> saving_io_events();
 
+  dd::task<void> consume_time_events();
+
   dd::task<void> executing_time_events();
 
   dd::task<void> checking_stop();
@@ -25,8 +27,8 @@ struct App {
  private:
   tgbm::bot bot;
   OrganizerDB db;
-  io_event_broker io_ev_broker;
   time_event_dispatcher time_ev_dispatcher;
+  io_event_broker io_ev_broker;
   Config config;
 };
 }  // namespace bot

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "json/value.hpp"
-#include "meta.hpp"
+#include "time/ts.hpp"
 
 namespace bot {
 
@@ -26,14 +26,12 @@ enum struct io_event_type {
   message,
 };
 
-static_assert(magic_enum::enum_names<io_event_type>() == meta_names_v<io_event_meta>);
-
 struct io_event {
-  std::int64_t io_event_id;
-  std::int64_t user_id;
-  ts_t ts;
-  io_event_meta meta;
-  bool consumed = false;
+  std::int64_t io_event_id{};
+  std::int64_t user_id{};
+  ts_utc_t ts = ts_utc_t::now();
+  bool consumed{};
+  io_event_meta meta{};
 
   static constexpr std::string_view db_name = "io_events";
   using meta_type = io_event_type;
@@ -49,7 +47,5 @@ struct io_event {
   message_meta_t& message_meta();
   const message_meta_t& message_meta() const;
 };
-
-static_assert(aggregate_with_meta<io_event>);
 
 }  // namespace bot

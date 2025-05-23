@@ -4,6 +4,8 @@
 #include "tgbm_replace/config.hpp"
 #include "tgbm_replace/scoped_file.hpp"
 
+#include <fmt/format.h>
+
 #include <fcntl.h>
 #include <thread>
 

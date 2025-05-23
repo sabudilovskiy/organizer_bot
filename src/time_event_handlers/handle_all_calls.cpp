@@ -58,7 +58,7 @@ today_calls_t get_today_calls(const User& user, OrganizerDB& db) {
   });
 }
 
-void reschedule(const User& user, time_event& te, time_event_dispatcher& dispatcher) {
+void reschedule(const User& user, time_event& te, TimeEventDispatcher& dispatcher) {
   te.next_occurence = te.reminder_all_calls_meta()
                           .next_occurence(user.now() + std::chrono::minutes(1))
                           .to_utc();
@@ -70,7 +70,7 @@ void reschedule(const User& user, time_event& te, time_event_dispatcher& dispatc
 }  // namespace
 
 consumer_t handle_all_calls(OrganizerDB& db, const tgbm::api::telegram& api,
-                            time_event_dispatcher& dispatcher, time_event event) {
+                            TimeEventDispatcher& dispatcher, time_event event) {
   assert(event.type() == time_event_type::reminder_all_calls);
 
   auto user = db.fetchUser(RequestUser{

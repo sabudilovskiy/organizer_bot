@@ -1,8 +1,9 @@
 #pragma once
 
 #include <chrono>
-#include <time.h>
+#include <ctime>
 #include <array>
+#include <string_view>
 
 #include "tgbm_replace/level.hpp"
 
@@ -25,8 +26,8 @@ inline std::string_view ts_str_now() {
   if (localtime_s(&tm, &t) != 0) {
     std::terminate();
   }
-#else  // Standard C11/C23 or other platforms
-  if (!localtime_s(&t, &tm)) {
+#else  // POSIX systems
+  if (localtime_r(&t, &tm) == nullptr) {
     std::terminate();
   }
 #endif
@@ -37,4 +38,5 @@ inline std::string_view ts_str_now() {
     std::terminate();
   return s;
 }
+
 }  // namespace tgbm::log

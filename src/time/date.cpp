@@ -1,5 +1,6 @@
 #include "time/date.hpp"
 
+#include <format>
 #include <spanstream>
 
 namespace bot {
@@ -77,7 +78,7 @@ date& date::operator-=(std::chrono::days d) noexcept {
 }
 
 std::string date::serialize() const {
-  return fmt::format("{:%Y.%m.%d}", ymd_);
+  return std::format("{:%Y.%m.%d}", ymd_);
 }
 
 }  // namespace bot

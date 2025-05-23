@@ -1,5 +1,7 @@
 #include "time/ts_zoned.hpp"
 
+#include <format>
+
 namespace bot {
 
 ts_zoned_t::ts_zoned_t(ts_utc_t ts, time_zone tz) noexcept
@@ -15,7 +17,7 @@ ts_zoned_t::native_t ts_zoned_t::native() const noexcept {
 }
 
 std::string ts_zoned_t::serialize() const {
-  return fmt::format("{:%z}", time_);
+  return std::format("{:%z}", time_);
 }
 
 time_zone ts_zoned_t::zone() const noexcept {

@@ -40,18 +40,18 @@ std::string_view level_to_color(level lvl) {
 }
 
 std::string console_fmt_colored(level lvl, std::string_view str) {
-  return std::format("{}[{}]{:<10} {}{}\n", level_to_color(lvl), ts_str_now(),
+  return fmt::format("{}[{}]{:<10} {}{}\n", level_to_color(lvl), ts_str_now(),
                      prefix(lvl), str, reset_color);
 }
 
 std::string console_fmt(level lvl, std::string_view str) {
-  return std::format("[{}]{:<10} {}{}\n", ts_str_now(), prefix(lvl), str, reset_color);
+  return fmt::format("[{}]{:<10} {}{}\n", ts_str_now(), prefix(lvl), str, reset_color);
 }
 
 std::string thread_path() {
   std::stringstream ss;
   ss << std::this_thread::get_id();
-  return std::format("{}.thread_log", ss.str());
+  return fmt::format("{}.thread_log", ss.str());
 }
 }  // namespace
 

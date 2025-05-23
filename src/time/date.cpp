@@ -77,7 +77,7 @@ date& date::operator-=(std::chrono::days d) noexcept {
 }
 
 std::string date::serialize() const {
-  return std::format("{:%Y.%m.%d}", ymd_);
+  return fmt::format("{:%Y.%m.%d}", ymd_);
 }
 
 }  // namespace bot

@@ -38,7 +38,7 @@ ts_utc_t::native_t ts_utc_t::native() const noexcept {
 }
 
 std::string ts_utc_t::serialize() const {
-  return std::format("{:%Y-%m-%d %H:%M:%S}", time_);
+  return fmt::format("{:%Y-%m-%d %H:%M:%S}", time_);
 }
 
 ts_utc_t ts_utc_t::operator+(std::chrono::nanoseconds ns) const noexcept {

@@ -15,7 +15,7 @@ ts_zoned_t::native_t ts_zoned_t::native() const noexcept {
 }
 
 std::string ts_zoned_t::serialize() const {
-  return std::format("{:%z}", time_);
+  return fmt::format("{:%z}", time_);
 }
 
 time_zone ts_zoned_t::zone() const noexcept {

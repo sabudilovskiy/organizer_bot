@@ -7,11 +7,9 @@
             "binaryDir": "cmake_build",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
-                "CMAKE_CXX_STANDARD": "20",
+                "CMAKE_CXX_STANDARD": "23",
                 "CMAKE_LINKER_TYPE": "LLD",
-                "CMAKE_BUILD_TYPE": "Debug",
-                "TGBM_ENABLE_TESTING": "ON",
-                "TGBM_ENABLE_EXAMPLES": "ON"
+                "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
@@ -20,11 +18,9 @@
             "binaryDir": "cmake_build",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
-                "CMAKE_CXX_STANDARD": "20",
+                "CMAKE_CXX_STANDARD": "23",
                 "CMAKE_LINKER_TYPE": "LLD",
-                "CMAKE_BUILD_TYPE": "Debug",
-                "TGBM_ENABLE_TESTING": "ON",
-                "TGBM_ENABLE_EXAMPLES": "ON"
+                "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {

@@ -26,7 +26,7 @@ function(validate_migrations MIGRATION_FILES OUT_NUM_MIGRATIONS)
         set(EXPECTED_FILE_NAME "${EXPECTED_FILE_NAME}.sql")
 
         if (NOT "${FILENAME}" STREQUAL "${EXPECTED_FILE_NAME}")
-            message(FATAL_ERROR "[bot][migrations] Отсутствует миграция ${EXPECTED_FILE_NAME}")
+            message(FATAL_ERROR "[bot][migrations] Missing migration ${EXPECTED_FILE_NAME}")
         endif()
 
         math(EXPR EXPECTED_IDX "${EXPECTED_IDX} + 1")
@@ -65,7 +65,7 @@ endfunction()
 
 function(generate_migrations_all_hpp NUM_MIGRATIONS)
     if (NUM_MIGRATIONS EQUAL 0)
-        message(FATAL_ERROR "[bot][migrations] Нет миграций для генерации migrations_all.hpp")
+        message(FATAL_ERROR "[bot][migrations] No migrations found to generate migrations_all.hpp")
     endif()
 
     set(ARRAY_ENTRIES "")
@@ -98,15 +98,15 @@ endfunction()
 
 function(generate_all_migration_files)
     if (NOT DEFINED MIGRATIONS_SRC_DIR)
-        message(FATAL_ERROR "[bot][migrations] MIGRATIONS_SRC_DIR не определён")
+        message(FATAL_ERROR "[bot][migrations] MIGRATIONS_SRC_DIR is not defined")
     endif()
 
     if (NOT DEFINED MIGRATIONS_BUILD_DIR)
-        message(FATAL_ERROR "[bot][migrations] MIGRATIONS_BUILD_DIR не определён")
+        message(FATAL_ERROR "[bot][migrations] MIGRATIONS_BUILD_DIR is not defined")
     endif()
 
     if (NOT EXISTS ${MIGRATIONS_SRC_DIR})
-        message(FATAL_ERROR "[bot][migrations] Директория ${MIGRATIONS_SRC_DIR} не существует")
+        message(FATAL_ERROR "[bot][migrations] Directory ${MIGRATIONS_SRC_DIR} does not exist")
     endif()
 
     file(MAKE_DIRECTORY ${MIGRATIONS_BUILD_DIR})
@@ -123,8 +123,8 @@ function(generate_all_migration_files)
 
         generate_all_hpp("${SORTED_MIGRATION_FILES}")
         generate_migrations_all_hpp(${NUM_MIGRATIONS})
-        message (STATUS "[bot][migrations] Сгенерированы файлы миграций")
+        message(STATUS "[bot][migrations] Migration files have been generated")
     else()
-        message(FATAL_ERROR "[bot][migrations] В папке ${MIGRATIONS_SRC_DIR} нет файлов")
+        message(FATAL_ERROR "[bot][migrations] No files found in directory ${MIGRATIONS_SRC_DIR}")
     endif()
 endfunction()

@@ -47,12 +47,12 @@ dd::task<tgbm::api::optional<io_event>> generate_event(tgbm::api::Update u,
 }
 }  // namespace
 
-io_event_broker::io_event_broker(const tgbm::api::telegram& api, OrganizerDB& db,
-                                 time_event_dispatcher& time_event_dispatcher) noexcept
+IoEventBroker::IoEventBroker(const tgbm::api::telegram& api, OrganizerDB& db,
+                             TimeEventDispatcher& time_event_dispatcher) noexcept
     : api_(api), db_(db), time_event_dispatcher_(time_event_dispatcher) {
 }
 
-dd::task<void> io_event_broker::process_update(tgbm::api::Update update) {
+dd::task<void> IoEventBroker::process_update(tgbm::api::Update update) {
   auto event = co_await generate_event(std::move(update), db_, api_);
   if (!event) {
     co_return;
@@ -60,7 +60,7 @@ dd::task<void> io_event_broker::process_update(tgbm::api::Update update) {
   co_await process_event(std::move(*event));
 }
 
-void io_event_broker::load() {
+void IoEventBroker::load() {
   auto db_events = db_.getEvents();
   auto fn = [](const io_event& l, const io_event& r) { return l.user_id == r.user_id; };
   for (auto&& group : db_events | std::ranges::views::chunk_by(fn)) {
@@ -69,11 +69,11 @@ void io_event_broker::load() {
   }
 }
 
-std::vector<io_event>& io_event_broker::get_events(std::int64_t user_id) {
+std::vector<io_event>& IoEventBroker::get_events(std::int64_t user_id) {
   return events_[user_id];
 }
 
-void io_event_broker::save() {
+void IoEventBroker::save() {
   std::vector<int64_t> consumed_events;
 
   for (auto& [_, events] : events_) {
@@ -97,7 +97,7 @@ void io_event_broker::save() {
   }
 }
 
-dd::task<void> io_event_broker::safe_process_update(tgbm::api::Update update) noexcept {
+dd::task<void> IoEventBroker::safe_process_update(tgbm::api::Update update) noexcept {
   auto update_id = update.update_id;
   auto t = process_update(std::move(update));
   try {
@@ -107,11 +107,11 @@ dd::task<void> io_event_broker::safe_process_update(tgbm::api::Update update) no
   }
 }
 
-void io_event_broker::add_deferred_event(io_event event) {
+void IoEventBroker::add_deferred_event(io_event event) {
   deferred_events_.emplace_back(std::move(event));
 }
 
-dd::task<void> io_event_broker::process_event(io_event event) {
+dd::task<void> IoEventBroker::process_event(io_event event) {
   TGBM_LOG_DEBUG("Processed: {}", event);
 
   auto& user_events = events_[event.user_id];
@@ -148,13 +148,13 @@ dd::task<void> io_event_broker::process_event(io_event event) {
   (void)co_await user_consumer.begin();
 }
 
-dd::task<void> io_event_broker::process_defferred_events() {
+dd::task<void> IoEventBroker::process_defferred_events() {
   for (auto& e : deferred_events_) {
     co_await process_event(std::move(e));
   }
 }
 
-dd::task<void> io_event_broker::process_old_events() {
+dd::task<void> IoEventBroker::process_old_events() {
   for (auto& [user_id, user_events] : events_) {
     auto& user_consumer = consumers_[user_id];
     if (events::should_main_menu(user_events) || user_consumer.empty()) {

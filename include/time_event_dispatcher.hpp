@@ -12,7 +12,7 @@
 
 namespace bot {
 
-struct time_event_dispatcher {
+struct TimeEventDispatcher {
   using next_occur_comp = decltype([](const time_event& lhs, const time_event& rhs) {
     return lhs.next_occurence > rhs.next_occurence;
   });
@@ -23,7 +23,7 @@ struct time_event_dispatcher {
 
   void consume(std::int64_t event_id);
 
-  time_event_dispatcher(const tgbm::api::telegram& api, OrganizerDB& db) noexcept
+  TimeEventDispatcher(const tgbm::api::telegram& api, OrganizerDB& db) noexcept
       : api(api), db(db) {
   }
 

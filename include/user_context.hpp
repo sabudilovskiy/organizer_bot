@@ -14,21 +14,21 @@ namespace bot {
 struct OrganizerDB;
 struct io_event;
 struct User;
-struct io_event_broker;
+struct IoEventBroker;
 
 struct Context {
   OrganizerDB& db;
   const tgbm::api::telegram& api;
-  io_event_broker& event_broker;
-  time_event_dispatcher& time_event_dispatcher;
+  IoEventBroker& event_broker;
+  TimeEventDispatcher& time_event_dispatcher;
   std::vector<io_event>& events;
 };
 
 struct ContextWithUser {
   OrganizerDB& db;
   const tgbm::api::telegram& api;
-  io_event_broker& io_event_broker;
-  time_event_dispatcher& time_event_dispatcher;
+  IoEventBroker& io_event_broker;
+  TimeEventDispatcher& time_event_dispatcher;
   std::vector<io_event>& events;
   User& user;
 

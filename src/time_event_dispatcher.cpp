@@ -5,14 +5,14 @@
 
 namespace bot {
 
-std::int64_t time_event_dispatcher::push(time_event event) {
+std::int64_t TimeEventDispatcher::push(time_event event) {
   auto id = db.addTimeEvent(event);
   event.time_event_id = id;
   queue.push(std::move(event));
   return id;
 }
 
-void time_event_dispatcher::save() {
+void TimeEventDispatcher::save() {
   db.consumeTimeEvents(consumed_events);
   auto size = consumed_events.size();
   consumed_events.clear();
@@ -23,14 +23,14 @@ void time_event_dispatcher::save() {
   }
 }
 
-void time_event_dispatcher::load() {
+void TimeEventDispatcher::load() {
   auto events = db.getTimeEvents(ts_utc_t::now() + std::chrono::hours(1));
   for (auto& e : events) {
     queue.push(std::move(e));
   }
 }
 
-consumer_t time_event_dispatcher::handle(time_event event) {
+consumer_t TimeEventDispatcher::handle(time_event event) {
   auto id = event.time_event_id;
   switch (event.type()) {
     case time_event_type::reminder_all_calls:
@@ -43,19 +43,19 @@ consumer_t time_event_dispatcher::handle(time_event event) {
   co_return;
 }
 
-const time_event* time_event_dispatcher::top() {
+const time_event* TimeEventDispatcher::top() {
   while (!queue.empty() && consumed_events.contains(queue.top().time_event_id)) {
     queue.pop();
   }
   return !queue.empty() ? &queue.top() : nullptr;
 }
 
-ts_utc_t time_event_dispatcher::next_occurenece() {
+ts_utc_t TimeEventDispatcher::next_occurenece() {
   auto t = top();
   return t ? t->next_occurence : ts_utc_t::never();
 }
 
-consumer_t time_event_dispatcher::execute() {
+consumer_t TimeEventDispatcher::execute() {
   auto now_v = ts_utc_t::now();
   while (top() && now_v - top()->next_occurence >= std::chrono::seconds(1)) {
     auto e = *top();
@@ -73,7 +73,7 @@ consumer_t time_event_dispatcher::execute() {
   }
 }
 
-void time_event_dispatcher::consume(std::int64_t event_id) {
+void TimeEventDispatcher::consume(std::int64_t event_id) {
   consumed_events.emplace(event_id);
 }
 

@@ -1,5 +1,7 @@
 #include "time/ts_zoned.hpp"
 
+#include <format>
+
 namespace bot {
 
 ts_zoned_t::ts_zoned_t(ts_utc_t ts, time_zone tz) noexcept

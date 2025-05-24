@@ -1,5 +1,6 @@
 #include "time/date.hpp"
 
+#include <format>
 #include <spanstream>
 
 namespace bot {

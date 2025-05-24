@@ -8,6 +8,6 @@
 namespace bot {
 
 [[nodiscard]] consumer_t handle_all_calls(OrganizerDB& db, const tgbm::api::telegram& api,
-                                          time_event_dispatcher& dispatcher,
+                                          TimeEventDispatcher& dispatcher,
                                           time_event event);
 }

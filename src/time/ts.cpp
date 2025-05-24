@@ -1,5 +1,6 @@
 #include "time/ts.hpp"
 
+#include <format>
 #include <spanstream>
 
 namespace bot {

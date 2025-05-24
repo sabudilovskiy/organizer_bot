@@ -3,7 +3,7 @@ include("${CMAKE_SOURCE_DIR}/cmake/get_cpm.cmake")
 CPMAddPackage(
   NAME TGBM
   GIT_REPOSITORY https://github.com/bot-motherlib/TGBM
-  GIT_TAG        49f5cc01549aa99d0f9b76769cdcac11ca231ad8
+  GIT_TAG        add_use_cpm
 )
 
 set(SQLITECPP_RUN_CPPCHECK OFF)
